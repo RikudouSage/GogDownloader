@@ -1,0 +1,6 @@
+/.idea
+/vendor
+/composer.lock
+/auth.txt
+/local.txt
+/.php-cs-fixer.cache

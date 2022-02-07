@@ -1,0 +1,30 @@
+{
+    "name": "rikudou/gog-downloader",
+    "license": "WTFPL",
+    "require": {
+        "symfony/console": "^6.0",
+        "symfony/http-kernel": "^6.0",
+        "symfony/config": "^6.0",
+        "symfony/dependency-injection": "^6.0",
+        "symfony/yaml": "^6.0",
+        "symfony/finder": "^6.0",
+        "php": "^8.1",
+        "symfony/http-client": "^6.0",
+        "symfony/framework-bundle": "^6.0",
+        "symfony/browser-kit": "^6.0",
+        "symfony/mime": "^6.0",
+        "symfony/css-selector": "^6.0",
+        "ext-simplexml": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "scripts": {
+        "fixer": "php-cs-fixer fix --verbose --allow-risky=yes"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.6"
+    }
+}

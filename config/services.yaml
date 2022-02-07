@@ -1,0 +1,21 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+
+  _instanceof:
+    App\Service\Serializer\SerializerNormalizer:
+      tags:
+        - app.normalizer
+
+  App\:
+    resource: '../src'
+
+  Symfony\Component\Console\Application:
+    public: true
+
+  Symfony\Component\BrowserKit\HttpBrowser:
+
+  App\Service\Serializer:
+    arguments:
+      - !tagged_iterator app.normalizer
