@@ -158,7 +158,7 @@ You can use specific versions as tags or `latest` (the newest stable version) or
 
 Example 1:
 
-- `docker run --rm -it --init -v $(pwd)/Configs:/Configs -v $(pwd)/Downloads:/Downloads rikudousage/gog-downloader:latest`
+- `docker run --rm -it --init -v "$(pwd)/Configs:/Configs" -v "$(pwd)/Downloads:/Downloads" rikudousage/gog-downloader:latest`
 
 Explanation:
 
@@ -172,7 +172,7 @@ Explanation:
 
 Example 2:
 
-- `mkdir -p Configs Downloads; docker run --rm -it --init -v /etc/passwd:/etc/passwd:ro -v $(pwd)/Configs:/Configs -v $(pwd)/Downloads:/Downloads --user $(id -u) rikudousage/gog-downloader:latest`
+- `mkdir -p Configs Downloads; docker run --rm -it --init -v "/etc/passwd:/etc/passwd:ro" -v "$(pwd)/Configs:/Configs" -v "$(pwd)/Downloads:/Downloads" --user $(id -u) rikudousage/gog-downloader:latest`
 
 Explanation:
 
