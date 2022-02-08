@@ -22,9 +22,22 @@ final class LanguagesCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
+
+        $rows = [];
         foreach (Language::cases() as $case) {
-            $io->writeln("- {$case->value} ({$case->name})");
+            $rows[] = [
+                $case->value,
+                $case->name,
+                $case->getLocalName(),
+            ];
         }
+
+        $io->writeln('Please use the language code when filtering other commands by language (e.g. en, cz, jp)');
+        $io->table([
+            'Code',
+            'Machine name',
+            'Local name',
+        ], $rows);
 
         return self::SUCCESS;
     }
