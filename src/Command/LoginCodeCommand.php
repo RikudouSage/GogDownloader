@@ -4,6 +4,7 @@ namespace App\Command;
 
 use App\Exception\AuthenticationException;
 use App\Service\AuthenticationManager;
+use App\Service\WebAuthentication;
 use App\Validator\NonEmptyValidator;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -39,7 +40,7 @@ final class LoginCodeCommand extends Command
 
         $io->writeln([
             '',
-            'Visit https://auth.gog.com/auth?client_id=46899977096215655&redirect_uri=https%3A%2F%2Fembed.gog.com%2Fon_login_success%3Forigin%3Dclient&response_type=code&layout=client2 and log in.',
+            sprintf('Visit %s and log in.', WebAuthentication::AUTH_URL),
             "After you're logged in you should be redirected to a blank page, copy the address of the page and paste it here (the prompt is invisible, you won't see that you pasted anything).",
         ]);
 
