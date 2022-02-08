@@ -97,6 +97,7 @@ final class DownloadCommand extends Command
                 if (!$noVerify && $download->md5 && $download->md5 !== hash_final($hash)) {
                     $io->warning("{$game->title} - {$download->name} failed hash check");
                 }
+                fclose($stream);
 
                 $progress->finish();
                 $io->newLine();
