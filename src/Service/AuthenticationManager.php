@@ -54,7 +54,7 @@ final class AuthenticationManager
     {
         $authorization = $this->persistence->getAuthorization();
         if ($authorization === null) {
-            throw new AuthenticationException('No authorization data are stored.');
+            throw new AuthenticationException('No authorization data are stored. Please login before using this command.');
         }
         $now = new DateTimeImmutable();
 
