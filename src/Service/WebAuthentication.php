@@ -27,6 +27,9 @@ final class WebAuthentication
             return null;
         }
         $query = parse_url($url, PHP_URL_QUERY);
+        if ($query === null) {
+            return null;
+        }
         parse_str($query, $queryParts);
 
         return $queryParts['code'] ?? null;
