@@ -75,24 +75,24 @@ final class DownloadCommand extends Command
                     $md5 = $noVerify ? '' : md5_file($targetFile);
                     if (!$noVerify && $download->md5 === $md5) {
                         $io->writeln(
-                            "{$game->title} - {$download->name} ({$download->platform}): Skipping because it exists and is valid",
+                            "{$download->name} ({$download->platform}, {$download->language}): Skipping because it exists and is valid",
                         );
                         continue;
                     } elseif ($noVerify) {
-                        $io->writeln("{$game->title} - {$download->name} ({$download->platform}): Skipping because it exists (--no-verify specified, not checking content)");
+                        $io->writeln("{$download->name} ({$download->platform}, {$download->language}): Skipping because it exists (--no-verify specified, not checking content)");
                         continue;
                     }
                     $startAt = filesize($targetFile);
                 }
 
                 if ($operatingSystem !== null && $download->platform !== $operatingSystem->value) {
-                    $io->writeln("{$game->title} - {$download->name} ({$download->platform}): Skipping because of OS filter");
+                    $io->writeln("{$download->name} ({$download->platform}, {$download->language}): Skipping because of OS filter");
                     continue;
                 }
 
                 $progress->setMaxSteps(0);
                 $progress->setProgress(0);
-                $progress->setMessage("{$game->title} - {$download->name} ({$download->platform})");
+                $progress->setMessage("{$download->name} ({$download->platform}, {$download->language})");
 
                 $responses = $this->downloadManager->download($download, function (int $current, int $total) use ($progress) {
                     if ($total > 0) {
@@ -117,7 +117,7 @@ final class DownloadCommand extends Command
                     hash_update($hash, $chunk);
                 }
                 if (!$noVerify && $download->md5 && $download->md5 !== hash_final($hash)) {
-                    $io->warning("{$game->title} - {$download->name} failed hash check");
+                    $io->warning("{$download->name} ({$download->platform}, {$download->language}) failed hash check");
                 }
                 fclose($stream);
 
