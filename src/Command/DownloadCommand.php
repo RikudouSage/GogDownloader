@@ -202,7 +202,7 @@ final class DownloadCommand extends Command
 
         $dir = "{$dir}/{$title}";
         if (!is_dir($dir)) {
-            mkdir($dir, 0777, true);
+            mkdir($dir, recursive: true);
         }
 
         return $dir;
