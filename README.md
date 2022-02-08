@@ -148,7 +148,8 @@ This version will have new features sooner than standard release, but you may al
 
 ### Docker
 
-You can use the docker image `rikudousage/gog-downloader`.
+You can use the docker image `rikudousage/gog-downloader`. This is especially suitable for NAS servers
+which often don't have up-to-date packages but support docker.
 
 It doesn't offer any configuration, but you can mount two volumes, one for configuration (under `/Configs`)
 and the other for downloads (under `/Downloads`).
