@@ -196,3 +196,118 @@ for example `gog-downloader code-login`.
 
 If you add the alias line into your `~/.bashrc` or `~/.zshrc` (depending on your shell), the `gog-downloader` command
 will be available every time you start a command line shell.
+
+## Commands
+
+List of all commands that this app supports:
+
+### code-login
+
+```
+Description:
+  Login using a code (for example when two-factor auth or recaptcha is required)
+
+Usage:
+  code-login [<code>]
+
+Arguments:
+  code                  The login code or url. Treat the code as you would treat a password. Providing the code as an argument is not recommended.
+
+Options:
+  -h, --help            Display help for the given command. When no command is given display help for the list command
+  -q, --quiet           Do not output any message
+  -V, --version         Display this application version
+      --ansi|--no-ansi  Force (or disable --no-ansi) ANSI output
+  -n, --no-interaction  Do not ask any interactive question
+  -v|vv|vvv, --verbose  Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug
+```
+
+### login
+
+```
+Description:
+  Login via username and password. May fail due to recaptcha, prefer code login.
+
+Usage:
+  login [options] [--] [<username>]
+
+Arguments:
+  username                 Username to log in as, if empty will be asked interactively
+
+Options:
+      --password=PASSWORD  Your password. It's recommended to let the app ask for your password interactively instead of specifying it here.
+  -h, --help               Display help for the given command. When no command is given display help for the list command
+  -q, --quiet              Do not output any message
+  -V, --version            Display this application version
+      --ansi|--no-ansi     Force (or disable --no-ansi) ANSI output
+  -n, --no-interaction     Do not ask any interactive question
+  -v|vv|vvv, --verbose     Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug
+```
+
+### languages
+
+```
+Description:
+  Lists all supported languages
+
+Usage:
+  languages
+
+Options:
+  -h, --help            Display help for the given command. When no command is given display help for the list command
+  -q, --quiet           Do not output any message
+  -V, --version         Display this application version
+      --ansi|--no-ansi  Force (or disable --no-ansi) ANSI output
+  -n, --no-interaction  Do not ask any interactive question
+  -v|vv|vvv, --verbose  Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug
+```
+
+### update-database (or update)
+
+```
+Description:
+  Updates the games/files database.
+
+Usage:
+  update-database [options]
+  update
+
+Options:
+  -u, --updated-only       Download information only about updated games
+  -c, --clear              Clear local database before updating it
+  -s, --search=SEARCH      Update only games that match the given search
+  -o, --os=OS              Filter by OS, allowed values are: windows, mac, linux
+  -l, --language=LANGUAGE  Filter by language, for list of languages run "languages"
+  -h, --help               Display help for the given command. When no command is given display help for the list command
+  -q, --quiet              Do not output any message
+  -V, --version            Display this application version
+      --ansi|--no-ansi     Force (or disable --no-ansi) ANSI output
+  -n, --no-interaction     Do not ask any interactive question
+  -new, --new-only         Download information only about new games
+  -v|vv|vvv, --verbose     Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug
+```
+
+### download
+
+```
+Description:
+  Downloads all files from the local database (see update command). Can resume downloads unless --no-verify is specified.
+
+Usage:
+  download [options] [--] [<directory>]
+
+Arguments:
+  directory                        The target directory, defaults to current dir. [default: "/Downloads"]
+
+Options:
+      --no-verify                  Set this flag to disable verification of file content before downloading. Disables resuming of downloads.
+  -o, --os=OS                      Download only games for specified operating system, allowed values: windows, mac, linux
+  -l, --language=LANGUAGE          Download only games for specified language. See command "languages" for list of them.
+      --language-fallback-english  Download english versions of games when the specified language is not found.
+  -h, --help                       Display help for the given command. When no command is given display help for the list command
+  -q, --quiet                      Do not output any message
+  -V, --version                    Display this application version
+      --ansi|--no-ansi             Force (or disable --no-ansi) ANSI output
+  -n, --no-interaction             Do not ask any interactive question
+  -v|vv|vvv, --verbose             Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug
+```
