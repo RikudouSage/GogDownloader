@@ -161,7 +161,7 @@ Examples:
 
 Explanation:
 
-- This creates an interactive container (needed for logging and other stuff) that gets removed immediately after use.
+- This creates an interactive container (needed for logging in and other stuff) that gets removed immediately after use.
 - The config directory is mounted to a directory `Configs` created in the current directory.
 - The downloads directory is mounted to a directory `Downloads` created in the current directory.
 - The latest stable version is used.
