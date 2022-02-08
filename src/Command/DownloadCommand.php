@@ -101,6 +101,7 @@ final class DownloadCommand extends Command
 
             foreach ($downloads as $download) {
                 $progress = $io->createProgressBar();
+                $progress->setMessage('Starting...');
                 ProgressBar::setPlaceholderFormatterDefinition(
                     'bytes_current',
                     $this->getBytesCallable($progress->getProgress(...)),
@@ -112,6 +113,24 @@ final class DownloadCommand extends Command
 
                 $format = ' %bytes_current% / %bytes_total% [%bar%] %percent:3s%% - %message%';
                 $progress->setFormat($format);
+
+                if ($operatingSystem !== null && $download->platform !== $operatingSystem->value) {
+                    if ($output->isVerbose()) {
+                        $io->writeln("{$download->name} ({$download->platform}, {$download->language}): Skipping because of OS filter");
+                    }
+                    continue;
+                }
+
+                if (
+                    $language !== null
+                    && $download->language !== $language->getLocalName()
+                    && (!$englishFallback || $download->language !== Language::English->getLocalName())
+                ) {
+                    if ($output->isVerbose()) {
+                        $io->writeln("{$download->name} ({$download->platform}, {$download->language}): Skipping because of language filter");
+                    }
+                    continue;
+                }
 
                 $targetFile = "{$this->getTargetDir($input, $game)}/{$this->downloadManager->getFilename($download)}";
                 $startAt = null;
@@ -131,24 +150,6 @@ final class DownloadCommand extends Command
                         continue;
                     }
                     $startAt = filesize($targetFile);
-                }
-
-                if ($operatingSystem !== null && $download->platform !== $operatingSystem->value) {
-                    if ($output->isVerbose()) {
-                        $io->writeln("{$download->name} ({$download->platform}, {$download->language}): Skipping because of OS filter");
-                    }
-                    continue;
-                }
-
-                if (
-                    $language !== null
-                    && $download->language !== $language->getLocalName()
-                    && (!$englishFallback || $download->language !== Language::English->getLocalName())
-                ) {
-                    if ($output->isVerbose()) {
-                        $io->writeln("{$download->name} ({$download->platform}, {$download->language}): Skipping because of language filter");
-                    }
-                    continue;
                 }
 
                 $progress->setMaxSteps(0);
@@ -197,7 +198,7 @@ final class DownloadCommand extends Command
             $dir = getcwd() . '/' . $dir;
         }
 
-        $title = preg_replace('@[^a-zA-Z-_0-9\.]@', '_', $game->title);
+        $title = preg_replace('@[^a-zA-Z-_0-9.]@', '_', $game->title);
         $title = preg_replace('@_{2,}@', '_', $title);
 
         $dir = "{$dir}/{$title}";
