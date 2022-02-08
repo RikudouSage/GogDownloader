@@ -35,7 +35,7 @@ final class DownloadCommand extends Command
                 'directory',
                 InputArgument::OPTIONAL,
                 'The target directory, defaults to current dir.',
-                getcwd(),
+                $_ENV['DOWNLOAD_DIRECTORY'] ?? getcwd(),
             )
             ->addOption(
                 'no-verify',

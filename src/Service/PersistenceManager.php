@@ -60,6 +60,6 @@ final class PersistenceManager
         #[ExpectedValues(valuesFromClass: self::class)]
         string $file
     ): string {
-        return sprintf('%s/%s', getcwd(), $file);
+        return sprintf('%s/%s', $_ENV['CONFIG_DIRECTORY'] ?? getcwd(), $file);
     }
 }
