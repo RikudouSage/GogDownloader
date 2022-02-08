@@ -1,5 +1,7 @@
 /.idea
 /vendor
-/composer.lock
+/Configs
+/Downloads
 /.php-cs-fixer.cache
+/composer.lock
 /gog-downloader.db
