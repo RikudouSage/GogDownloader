@@ -23,7 +23,17 @@ jobs:
       - name: Rename
         run: mv gog-downloader.phar gog-downloader
       - name: Create artifact
+        if: ${{ !env.ACT }}
         uses: actions/upload-artifact@v2
         with:
           name: gog-downloader
           path: gog-downloader
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: rikudousage
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+      - name: Create docker
+        run: docker build -t rikudousage/gog-downloader:latest .
+      - name: Push docker
+        run: docker push rikudousage/gog-downloader:latest
