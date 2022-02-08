@@ -26,11 +26,11 @@ final class LoginCommand extends Command
     protected function configure()
     {
         $this
-            ->setDescription('Login via username and password. May fail due to recaptcha, prefer code login.')
+            ->setDescription('Login via email and password. May fail due to recaptcha, prefer code login.')
             ->addArgument(
-                'username',
+                'email',
                 InputArgument::OPTIONAL,
-                'Username to log in as, if empty will be asked interactively',
+                'Email to log in as, if empty will be asked interactively',
             )
             ->addOption(
                 'password',
@@ -43,12 +43,12 @@ final class LoginCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $username = $this->getUsername($io, $input);
+        $email = $this->getEmail($io, $input);
         $password = $this->getPassword($io, $input);
 
-        $code = $this->webAuthentication->getCode($username, $password);
+        $code = $this->webAuthentication->getCode($email, $password);
         if ($code === null) {
-            $io->error('Failed to login using username and password. Either the credentials are wrong or there was a recaptcha.');
+            $io->error('Failed to login using email and password. Either the credentials are wrong or there was a recaptcha.');
 
             return self::FAILURE;
         }
@@ -59,13 +59,13 @@ final class LoginCommand extends Command
         return self::SUCCESS;
     }
 
-    private function getUsername(SymfonyStyle $io, InputInterface $input): string
+    private function getEmail(SymfonyStyle $io, InputInterface $input): string
     {
-        if ($username = $input->getArgument('username')) {
-            return $username;
+        if ($email = $input->getArgument('email')) {
+            return $email;
         }
 
-        return $io->ask('Username', validator: new NonEmptyValidator());
+        return $io->ask('Email', validator: new NonEmptyValidator());
     }
 
     private function getPassword(SymfonyStyle $io, InputInterface $input): string

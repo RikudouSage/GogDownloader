@@ -34,6 +34,6 @@ jobs:
           username: rikudousage
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
       - name: Create docker
-        run: docker build -t rikudousage/gog-downloader:latest .
+        run: docker build -t rikudousage/gog-downloader:dev .
       - name: Push docker
-        run: docker push rikudousage/gog-downloader:latest
+        run: docker push rikudousage/gog-downloader:dev

@@ -14,11 +14,11 @@ final class WebAuthentication
     ) {
     }
 
-    public function getCode(string $username, string $password): ?string
+    public function getCode(string $email, string $password): ?string
     {
         $this->browser->request(Request::METHOD_GET, self::AUTH_URL);
         $response = $this->browser->submitForm('login_login', [
-            'login[username]' => $username,
+            'login[username]' => $email,
             'login[password]' => $password,
         ]);
 
