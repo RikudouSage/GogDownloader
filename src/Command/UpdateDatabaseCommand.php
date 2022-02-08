@@ -4,6 +4,7 @@ namespace App\Command;
 
 use App\DTO\GameDetail;
 use App\DTO\OwnedItemInfo;
+use App\DTO\SearchFilter;
 use App\Enum\Language;
 use App\Enum\MediaType;
 use App\Enum\OperatingSystem;
@@ -30,15 +31,27 @@ final class UpdateDatabaseCommand extends Command
             ->setDescription('Updates the games/files database.')
             ->addOption(
                 'new-only',
-                null,
+                'new',
                 InputOption::VALUE_NONE,
                 'Download information only about new games',
             )
             ->addOption(
                 'updated-only',
-                null,
+                'u',
                 InputOption::VALUE_NONE,
                 'Download information only about updated games',
+            )
+            ->addOption(
+                'clear',
+                'c',
+                InputOption::VALUE_NONE,
+                'Clear local database before updating it',
+            )
+            ->addOption(
+                'search',
+                's',
+                InputOption::VALUE_REQUIRED,
+                'Update only games that match the given search',
             )
             ->addOption(
                 'os',
@@ -62,18 +75,27 @@ final class UpdateDatabaseCommand extends Command
         ;
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
+
+        if ($input->getOption('clear')) {
+            $this->ownedItemsManager->storeGamesData([]);
+        }
 
         $storedItems = $this->ownedItemsManager->getLocalGameData();
         $storedItemIds = array_map(fn (GameDetail $detail) => $detail->id, $storedItems);
 
+        $filter = new SearchFilter(
+            operatingSystem: OperatingSystem::tryFrom($input->getOption('os')),
+            language: Language::tryFrom($input->getOption('language')),
+            search: $input->getOption('search'),
+        );
+
         foreach ($this->getTypes($input) as $type) {
             $items = $this->ownedItemsManager->getOwnedItems(
-                $type,
-                language: Language::tryFrom($input->getOption('language')),
-                operatingSystem: OperatingSystem::tryFrom($input->getOption('os')),
+                mediaType: $type,
+                filter: $filter,
                 productsCount: $count
             );
             if ($input->getOption('new-only')) {

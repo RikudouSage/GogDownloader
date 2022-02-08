@@ -11,5 +11,7 @@ $kernel->boot();
 
 $container = $kernel->getContainer();
 $application = $container->get(Application::class);
+$application->setName('gog-downloader');
+$application->setVersion('1.0.0');
 
 $application->run();

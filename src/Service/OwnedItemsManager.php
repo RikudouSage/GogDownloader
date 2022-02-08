@@ -7,10 +7,9 @@ use App\DTO\GameDetail;
 use App\DTO\GameInfo;
 use App\DTO\MovieInfo;
 use App\DTO\OwnedItemInfo;
+use App\DTO\SearchFilter;
 use App\DTO\Url;
-use App\Enum\Language;
 use App\Enum\MediaType;
-use App\Enum\OperatingSystem;
 use App\Exception\AuthorizationException;
 use JsonException;
 use ReflectionException;
@@ -38,10 +37,9 @@ final class OwnedItemsManager
     }
 
     /**
-     * @param MediaType            $mediaType
-     * @param Language|null        $language
-     * @param OperatingSystem|null $operatingSystem
-     * @param int|null             $productsCount
+     * @param MediaType    $mediaType
+     * @param SearchFilter $filter
+     * @param int|null     $productsCount
      *
      * @throws ClientExceptionInterface
      * @throws JsonException
@@ -54,8 +52,7 @@ final class OwnedItemsManager
      */
     public function getOwnedItems(
         MediaType $mediaType,
-        ?Language $language = null,
-        ?OperatingSystem $operatingSystem = null,
+        SearchFilter $filter = new SearchFilter(),
         int &$productsCount = null,
     ): iterable {
         $page = 1;
@@ -63,9 +60,16 @@ final class OwnedItemsManager
             'mediaType' => $mediaType->value,
             'page' => $page,
         ];
-        if ($language !== null) {
-            $query['language'] = $language->value;
+        if ($filter->language !== null) {
+            $query['language'] = $filter->language->value;
         }
+        if ($filter->operatingSystem !== null) {
+            $query['system'] = $filter->operatingSystem->getAsNumbers();
+        }
+        if ($filter->search !== null) {
+            $query['search'] = $filter->search;
+        }
+
         do {
             $response = $this->httpClient->request(
                 Request::METHOD_GET,

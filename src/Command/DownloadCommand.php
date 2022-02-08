@@ -3,6 +3,7 @@
 namespace App\Command;
 
 use App\DTO\GameDetail;
+use App\Enum\OperatingSystem;
 use App\Service\DownloadManager;
 use App\Service\OwnedItemsManager;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -39,6 +40,18 @@ final class DownloadCommand extends Command
                 InputOption::VALUE_NONE,
                 'Set this flag to disable verification of file content before downloading. Disables resuming of downloads.'
             )
+            ->addOption(
+                'os',
+                'o',
+                InputOption::VALUE_REQUIRED,
+                'Download only games for specified operating system, allowed values: ' . implode(
+                    ', ',
+                    array_map(
+                        fn (OperatingSystem $os) => $os->value,
+                        OperatingSystem::cases(),
+                    )
+                )
+            )
         ;
     }
 
@@ -47,6 +60,7 @@ final class DownloadCommand extends Command
         $io = new SymfonyStyle($input, $output);
 
         $noVerify = $input->getOption('no-verify');
+        $operatingSystem = OperatingSystem::tryFrom($input->getOption('os'));
 
         foreach ($this->ownedItemsManager->getLocalGameData() as $game) {
             foreach ($game->downloads as $download) {
@@ -61,19 +75,24 @@ final class DownloadCommand extends Command
                     $md5 = $noVerify ? '' : md5_file($targetFile);
                     if (!$noVerify && $download->md5 === $md5) {
                         $io->writeln(
-                            "{$game->title} - {$download->name}: Skipping because it exists and is valid",
+                            "{$game->title} - {$download->name} ({$download->platform}): Skipping because it exists and is valid",
                         );
                         continue;
                     } elseif ($noVerify) {
-                        $io->writeln("{$game->title} - {$download->name}: Skipping because it exists (--no-verify specified, not checking content)");
+                        $io->writeln("{$game->title} - {$download->name} ({$download->platform}): Skipping because it exists (--no-verify specified, not checking content)");
                         continue;
                     }
                     $startAt = filesize($targetFile);
                 }
 
+                if ($operatingSystem !== null && $download->platform !== $operatingSystem->value) {
+                    $io->writeln("{$game->title} - {$download->name} ({$download->platform}): Skipping because of OS filter");
+                    continue;
+                }
+
                 $progress->setMaxSteps(0);
                 $progress->setProgress(0);
-                $progress->setMessage("{$game->title} - {$download->name}");
+                $progress->setMessage("{$game->title} - {$download->name} ({$download->platform})");
 
                 $responses = $this->downloadManager->download($download, function (int $current, int $total) use ($progress) {
                     if ($total > 0) {
@@ -89,6 +108,9 @@ final class DownloadCommand extends Command
                 }
 
                 $hash = hash_init('md5');
+                if ($startAt !== null) {
+                    hash_update($hash, file_get_contents($targetFile));
+                }
                 foreach ($responses as $response) {
                     $chunk = $response->getContent();
                     fwrite($stream, $chunk);
