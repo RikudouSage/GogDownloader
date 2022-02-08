@@ -31,7 +31,7 @@ final class UpdateDatabaseCommand extends Command
             ->setDescription('Updates the games/files database.')
             ->addOption(
                 'new-only',
-                'new',
+                null,
                 InputOption::VALUE_NONE,
                 'Download information only about new games',
             )

@@ -120,9 +120,7 @@ final class OwnedItemsManager
 
     public function storeSingleGameData(GameDetail $detail): void
     {
-        $data = $this->getLocalGameData();
-        $data[] = $detail;
-        $this->storeGamesData($data);
+        $this->persistence->storeSingleGameDetail($detail);
     }
 
     /**

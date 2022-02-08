@@ -98,7 +98,7 @@ your given combination of os/language/search.
 > Tip: To list all languages available, run `gog-downloader languages`
 
 > Tip: Most of the arguments also have a short form, for example instead of `--os` you can use `-o`, instead of
-> `--language` you can use `-l`, for `--search` you can use `-s`, `-u` for `--updated-only`, `-new` for `--new-only`
+> `--language` you can use `-l`, for `--search` you can use `-s`, `-u` for `--updated-only`
 > etc. For list of arguments run `gog-downloader help update`.
 
 ### Downloading games
@@ -283,7 +283,7 @@ Options:
   -V, --version            Display this application version
       --ansi|--no-ansi     Force (or disable --no-ansi) ANSI output
   -n, --no-interaction     Do not ask any interactive question
-  -new, --new-only         Download information only about new games
+      --new-only         Download information only about new games
   -v|vv|vvv, --verbose     Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug
 ```
 

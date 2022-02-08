@@ -5,9 +5,8 @@ ENV DOWNLOAD_DIRECTORY=/Downloads
 
 RUN mkdir -p $CONFIG_DIRECTORY $DOWNLOAD_DIRECTORY \
     && chmod 0777 $CONFIG_DIRECTORY \
-    && apk add libxml2-dev \
-    && docker-php-ext-install simplexml \
-    && docker-php-ext-install pcntl
+    && apk add libxml2-dev sqlite-dev \
+    && docker-php-ext-install simplexml pcntl pdo_sqlite
 
 COPY gog-downloader /app/gog-downloader
 RUN chmod +x /app/gog-downloader

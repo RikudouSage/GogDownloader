@@ -7,6 +7,9 @@ services:
     App\Service\Serializer\SerializerNormalizer:
       tags:
         - app.normalizer
+    App\Migration\Migration:
+      tags:
+        - app.migration
 
   App\:
     resource: '../src'
@@ -19,3 +22,7 @@ services:
   App\Service\Serializer:
     arguments:
       - !tagged_iterator app.normalizer
+
+  App\Service\MigrationManager:
+    arguments:
+      - !tagged_iterator app.migration
