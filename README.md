@@ -155,7 +155,7 @@ and the other for downloads (under `/Downloads`).
 
 You can use specific versions as tags or `latest` (the newest stable version) or `dev` (the newest unstable version).
 
-Examples:
+Example 1:
 
 - `docker run --rm -it --init -v $(pwd)/Configs:/Configs -v $(pwd)/Downloads:/Downloads rikudousage/gog-downloader:latest`
 
@@ -168,6 +168,8 @@ Explanation:
 - The files and configs are created under the `root` user which may pose some permission issues
   - These may be resolved by running `sudo chown -R $(id -u):$(id -g) Configs Downloads` after every download session
   - To download directly under your current user, see the next example
+
+Example 2:
 
 - `mkdir -p Configs Downloads; docker run --rm -it --init -v /etc/passwd:/etc/passwd:ro -v $(pwd)/Configs:/Configs -v $(pwd)/Downloads:/Downloads --user $(id -u) rikudousage/gog-downloader:latest`
 
