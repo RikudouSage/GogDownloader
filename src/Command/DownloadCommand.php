@@ -75,8 +75,8 @@ final class DownloadCommand extends Command
         $io = new SymfonyStyle($input, $output);
 
         $noVerify = $input->getOption('no-verify');
-        $operatingSystem = OperatingSystem::tryFrom($input->getOption('os'));
-        $language = Language::tryFrom($input->getOption('language'));
+        $operatingSystem = OperatingSystem::tryFrom($input->getOption('os') ?? '');
+        $language = Language::tryFrom($input->getOption('language') ?? '');
         $englishFallback = $input->getOption('language-fallback-english');
 
         if ($language !== null && $language !== Language::English && !$englishFallback) {

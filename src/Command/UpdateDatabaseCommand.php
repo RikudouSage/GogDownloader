@@ -87,8 +87,8 @@ final class UpdateDatabaseCommand extends Command
         $storedItemIds = array_map(fn (GameDetail $detail) => $detail->id, $storedItems);
 
         $filter = new SearchFilter(
-            operatingSystem: OperatingSystem::tryFrom($input->getOption('os')),
-            language: Language::tryFrom($input->getOption('language')),
+            operatingSystem: OperatingSystem::tryFrom($input->getOption('os') ?? ''),
+            language: Language::tryFrom($input->getOption('language') ?? ''),
             search: $input->getOption('search'),
         );
 
