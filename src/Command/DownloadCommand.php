@@ -7,6 +7,7 @@ use App\DTO\GameDetail;
 use App\Enum\Language;
 use App\Enum\OperatingSystem;
 use App\Service\DownloadManager;
+use App\Service\HashCalculator;
 use App\Service\OwnedItemsManager;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -23,6 +24,7 @@ final class DownloadCommand extends Command
     public function __construct(
         private readonly OwnedItemsManager $ownedItemsManager,
         private readonly DownloadManager $downloadManager,
+        private readonly HashCalculator $hashCalculator,
     ) {
         parent::__construct();
     }
@@ -135,7 +137,7 @@ final class DownloadCommand extends Command
                 $targetFile = "{$this->getTargetDir($input, $game)}/{$this->downloadManager->getFilename($download)}";
                 $startAt = null;
                 if (($download->md5 || $noVerify) && file_exists($targetFile)) {
-                    $md5 = $noVerify ? '' : md5_file($targetFile);
+                    $md5 = $noVerify ? '' : $this->hashCalculator->getHash($targetFile);
                     if (!$noVerify && $download->md5 === $md5) {
                         if ($output->isVerbose()) {
                             $io->writeln(
