@@ -305,6 +305,7 @@ Options:
   -o, --os=OS                      Download only games for specified operating system, allowed values: windows, mac, linux
   -l, --language=LANGUAGE          Download only games for specified language. See command "languages" for list of them.
       --language-fallback-english  Download english versions of games when the specified language is not found.
+  -u, --update                     If you specify this flag the local database will be updated before each download and you don't need  to update it separately
   -h, --help                       Display help for the given command. When no command is given display help for the list command
   -q, --quiet                      Do not output any message
   -V, --version                    Display this application version

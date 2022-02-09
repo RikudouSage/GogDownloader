@@ -4,10 +4,13 @@ namespace App\Command;
 
 use App\DTO\DownloadDescription;
 use App\DTO\GameDetail;
+use App\DTO\OwnedItemInfo;
 use App\Enum\Language;
+use App\Enum\MediaType;
 use App\Enum\OperatingSystem;
 use App\Service\DownloadManager;
 use App\Service\HashCalculator;
+use App\Service\IteratorCallback;
 use App\Service\OwnedItemsManager;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -25,6 +28,7 @@ final class DownloadCommand extends Command
         private readonly OwnedItemsManager $ownedItemsManager,
         private readonly DownloadManager $downloadManager,
         private readonly HashCalculator $hashCalculator,
+        private readonly IteratorCallback $iteratorCallback,
     ) {
         parent::__construct();
     }
@@ -69,6 +73,12 @@ final class DownloadCommand extends Command
                 InputOption::VALUE_NONE,
                 'Download english versions of games when the specified language is not found.',
             )
+            ->addOption(
+                'update',
+                'u',
+                InputOption::VALUE_NONE,
+                "If you specify this flag the local database will be updated before each download and you don't need  to update it separately"
+            )
         ;
     }
 
@@ -85,7 +95,24 @@ final class DownloadCommand extends Command
             $io->warning("GOG often has multiple language versions inside the English one. Those game files will be skipped. Specify --language-fallback-english to include English versions if your language's version doesn't exist.");
         }
 
-        foreach ($this->ownedItemsManager->getLocalGameData() as $game) {
+        if ($input->getOption('update') && $output->isVerbose()) {
+            $io->info('The --update flag specified, skipping local database and downloading metadata anew');
+        }
+
+        $iterable = $input->getOption('update')
+            ? $this->iteratorCallback->getIteratorWithCallback(
+                $this->ownedItemsManager->getOwnedItems(MediaType::Game),
+                function (OwnedItemInfo $info) use ($output): GameDetail {
+                    if ($output->isVerbose()) {
+                        $output->writeln("Updating metadata for {$info->getTitle()}...");
+                    }
+
+                    return $this->ownedItemsManager->getItemDetail($info);
+                },
+            )
+            : $this->ownedItemsManager->getLocalGameData();
+
+        foreach ($iterable as $game) {
             $downloads = $game->downloads;
 
             if ($englishFallback && $language) {
