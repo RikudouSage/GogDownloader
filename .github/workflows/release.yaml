@@ -38,7 +38,7 @@ jobs:
         env:
           VERSION: ${{ steps.extract_name.outputs.result }}
         run: | 
-          docker build -t rikudousage/gog-downloader:latest .
+          docker build -t rikudousage/gog-downloader:latest . && \
           docker tag rikudousage/gog-downloader:latest rikudousage/gog-downloader:$VERSION
       - name: Push docker
         env:
