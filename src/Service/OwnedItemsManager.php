@@ -60,6 +60,7 @@ final class OwnedItemsManager
             'mediaType' => $mediaType->value,
             'page' => $page,
             'sortBy' => 'title',
+            'hiddenFlag' => 0,
         ];
         if ($filter->language !== null) {
             $query['language'] = $filter->language->value;
@@ -69,6 +70,9 @@ final class OwnedItemsManager
         }
         if ($filter->search !== null) {
             $query['search'] = $filter->search;
+        }
+        if ($filter->includeHidden) {
+            unset($query['hiddenFlag']);
         }
 
         do {

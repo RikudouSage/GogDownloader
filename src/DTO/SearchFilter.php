@@ -11,6 +11,7 @@ final class SearchFilter
         public readonly ?OperatingSystem $operatingSystem = null,
         public readonly ?Language $language = null,
         public readonly ?string $search = null,
+        public readonly bool $includeHidden = false,
     ) {
     }
 }

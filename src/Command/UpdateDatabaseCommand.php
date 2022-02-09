@@ -71,6 +71,12 @@ final class UpdateDatabaseCommand extends Command
                 InputOption::VALUE_REQUIRED,
                 'Filter by language, for list of languages run "languages"'
             )
+            ->addOption(
+                'include-hidden',
+                null,
+                InputOption::VALUE_NONE,
+                'Include hidden games in the update',
+            )
             ->setAliases(['update'])
         ;
     }
@@ -90,6 +96,7 @@ final class UpdateDatabaseCommand extends Command
             operatingSystem: OperatingSystem::tryFrom($input->getOption('os') ?? ''),
             language: Language::tryFrom($input->getOption('language') ?? ''),
             search: $input->getOption('search'),
+            includeHidden: $input->getOption('include-hidden'),
         );
 
         foreach ($this->getTypes($input) as $type) {

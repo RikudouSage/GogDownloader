@@ -5,6 +5,7 @@ namespace App\Command;
 use App\DTO\DownloadDescription;
 use App\DTO\GameDetail;
 use App\DTO\OwnedItemInfo;
+use App\DTO\SearchFilter;
 use App\Enum\Language;
 use App\Enum\MediaType;
 use App\Enum\OperatingSystem;
@@ -99,9 +100,14 @@ final class DownloadCommand extends Command
             $io->info('The --update flag specified, skipping local database and downloading metadata anew');
         }
 
+        $filter = new SearchFilter(
+            operatingSystem: $operatingSystem,
+            language: $language,
+        );
+
         $iterable = $input->getOption('update')
             ? $this->iteratorCallback->getIteratorWithCallback(
-                $this->ownedItemsManager->getOwnedItems(MediaType::Game),
+                $this->ownedItemsManager->getOwnedItems(MediaType::Game, $filter),
                 function (OwnedItemInfo $info) use ($output): GameDetail {
                     if ($output->isVerbose()) {
                         $output->writeln("Updating metadata for {$info->getTitle()}...");
