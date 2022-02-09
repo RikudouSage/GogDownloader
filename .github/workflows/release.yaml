@@ -38,14 +38,14 @@ jobs:
         env:
           VERSION: ${{ steps.extract_name.outputs.result }}
         run: | 
-          docker build -t rikudousage/gog-downloader:latest . && \
+          docker build -t rikudousage/gog-downloader:latest .
           docker tag rikudousage/gog-downloader:latest rikudousage/gog-downloader:$VERSION
       - name: Push docker
         env:
           VERSION: ${{ steps.extract_name.outputs.result }}
         run: |
           docker push rikudousage/gog-downloader:latest
-          rikudousage/gog-downloader:$VERSION
+          docker push rikudousage/gog-downloader:$VERSION
       - name: Create a Release
         id: create_release
         uses: softprops/action-gh-release@v1
