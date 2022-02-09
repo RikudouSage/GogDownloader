@@ -51,12 +51,11 @@ jobs:
         uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ steps.extract_name.outputs.result }}
         with:
           name: Release ${{ steps.extract_name.outputs.result }}
           draft: false
           prerelease: false
           body: |
-            Either download the `gog-downloader` below or use docker image `rikudousage/gog-downloader:$VERSION`.
+            Either download the `gog-downloader` php binary below or use docker image `rikudousage/gog-downloader:${{ steps.extract_name.outputs.result }}`.
           files: |
             gog-downloader
