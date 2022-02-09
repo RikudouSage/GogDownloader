@@ -59,6 +59,7 @@ final class OwnedItemsManager
         $query = [
             'mediaType' => $mediaType->value,
             'page' => $page,
+            'sortBy' => 'title',
         ];
         if ($filter->language !== null) {
             $query['language'] = $filter->language->value;
