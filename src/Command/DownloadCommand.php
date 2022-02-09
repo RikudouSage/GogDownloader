@@ -11,7 +11,7 @@ use App\Enum\MediaType;
 use App\Enum\OperatingSystem;
 use App\Service\DownloadManager;
 use App\Service\HashCalculator;
-use App\Service\IteratorCallback;
+use App\Service\Iterables;
 use App\Service\OwnedItemsManager;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -29,7 +29,7 @@ final class DownloadCommand extends Command
         private readonly OwnedItemsManager $ownedItemsManager,
         private readonly DownloadManager $downloadManager,
         private readonly HashCalculator $hashCalculator,
-        private readonly IteratorCallback $iteratorCallback,
+        private readonly Iterables $iterables,
     ) {
         parent::__construct();
     }
@@ -106,7 +106,7 @@ final class DownloadCommand extends Command
         );
 
         $iterable = $input->getOption('update')
-            ? $this->iteratorCallback->getIteratorWithCallback(
+            ? $this->iterables->map(
                 $this->ownedItemsManager->getOwnedItems(MediaType::Game, $filter),
                 function (OwnedItemInfo $info) use ($output): GameDetail {
                     if ($output->isVerbose()) {
