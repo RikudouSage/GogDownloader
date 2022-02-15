@@ -83,6 +83,12 @@ final class DownloadCommand extends Command
                 "If you specify this flag the local database will be updated before each download and you don't need  to update it separately"
             )
             ->addOption(
+                'exclude-game-with-language',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Specify a language to exclude. If a game supports this language, it will be skipped.',
+            )
+            ->addOption(
                 'retry',
                 null,
                 InputOption::VALUE_REQUIRED,
@@ -107,6 +113,7 @@ final class DownloadCommand extends Command
         $operatingSystem = OperatingSystem::tryFrom($input->getOption('os') ?? '');
         $language = Language::tryFrom($input->getOption('language') ?? '');
         $englishFallback = $input->getOption('language-fallback-english');
+        $excludeLanguage = Language::tryFrom($input->getOption('exclude-game-with-language') ?? '');
 
         if ($language !== null && $language !== Language::English && !$englishFallback) {
             $io->warning("GOG often has multiple language versions inside the English one. Those game files will be skipped. Specify --language-fallback-english to include English versions if your language's version doesn't exist.");
@@ -139,14 +146,21 @@ final class DownloadCommand extends Command
 
             if ($englishFallback && $language) {
                 $downloads = array_filter(
-                    $game->downloads,
+                    $downloads,
                     fn (DownloadDescription $download) => $download->language === $language->getLocalName()
                 );
                 if (!count($downloads)) {
                     $downloads = array_filter(
-                        $game->downloads,
+                        $downloads,
                         fn (DownloadDescription $download) => $download->language === Language::English->getLocalName(),
                     );
+                }
+            }
+            if ($excludeLanguage) {
+                foreach ($downloads as $download) {
+                    if ($download->language === $excludeLanguage->getLocalName()) {
+                        continue 2;
+                    }
                 }
             }
 
