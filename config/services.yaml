@@ -26,3 +26,6 @@ services:
   App\Service\MigrationManager:
     arguments:
       - !tagged_iterator app.migration
+
+  App\Service\Persistence\PersistenceManager:
+    factory: ['@App\Service\Factory\PersistenceManagerFactory', 'getPersistenceManager']

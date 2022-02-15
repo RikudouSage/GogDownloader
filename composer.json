@@ -14,8 +14,7 @@
         "symfony/browser-kit": "^6.0",
         "symfony/mime": "^6.0",
         "symfony/css-selector": "^6.0",
-        "ext-simplexml": "*",
-        "ext-pdo": "*"
+        "ext-simplexml": "*"
     },
     "autoload": {
         "psr-4": {
