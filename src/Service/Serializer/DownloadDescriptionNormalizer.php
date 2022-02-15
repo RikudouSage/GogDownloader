@@ -11,7 +11,6 @@ use RuntimeException;
 final class DownloadDescriptionNormalizer implements MultipleValuesNormalizer
 {
     public function __construct(
-        private readonly OwnedItemsManager $ownedItemsManager,
     ) {
     }
 
