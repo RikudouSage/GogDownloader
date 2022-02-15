@@ -4,7 +4,6 @@ namespace App\Service\Serializer;
 
 use App\DTO\DownloadDescription;
 use App\DTO\MultipleValuesWrapper;
-use App\Service\OwnedItemsManager;
 use ReflectionProperty;
 use RuntimeException;
 

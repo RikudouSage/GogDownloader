@@ -1,14 +1,15 @@
 <?php
 
-namespace App\Service;
+namespace App\Service\Persistence;
 
 use App\DTO\Authorization;
 use App\DTO\GameDetail;
+use App\Service\MigrationManager;
 use DateTimeImmutable;
 use JetBrains\PhpStorm\ExpectedValues;
 use PDO;
 
-final class PersistenceManager
+final class PersistenceManagerSqlite extends AbstractPersistenceManager
 {
     private const DATABASE = 'gog-downloader.db';
 
@@ -94,7 +95,7 @@ final class PersistenceManager
         return $result;
     }
 
-    public function storeSingleGameDetail(GameDetail $detail)
+    public function storeSingleGameDetail(GameDetail $detail): void
     {
         $pdo = $this->getPdo(self::DATABASE);
         $this->migrationManager->apply($pdo);
@@ -103,13 +104,6 @@ final class PersistenceManager
         $prepared->execute([
             serialize($detail),
         ]);
-    }
-
-    private function getFullPath(
-        #[ExpectedValues(valuesFromClass: self::class)]
-        string $file
-    ): string {
-        return sprintf('%s/%s', $_ENV['CONFIG_DIRECTORY'] ?? getcwd(), $file);
     }
 
     private function getPdo(

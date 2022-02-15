@@ -5,6 +5,7 @@ namespace App\Service;
 use App\DTO\Authorization;
 use App\DTO\Url;
 use App\Exception\AuthenticationException;
+use App\Service\Persistence\PersistenceManager;
 use DateInterval;
 use DateTimeImmutable;
 use Symfony\Component\HttpFoundation\Request;

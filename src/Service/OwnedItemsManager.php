@@ -11,6 +11,7 @@ use App\DTO\SearchFilter;
 use App\DTO\Url;
 use App\Enum\MediaType;
 use App\Exception\AuthorizationException;
+use App\Service\Persistence\PersistenceManager;
 use JsonException;
 use ReflectionException;
 use ReflectionProperty;
