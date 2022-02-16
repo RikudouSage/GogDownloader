@@ -13,6 +13,7 @@ use App\Service\DownloadManager;
 use App\Service\HashCalculator;
 use App\Service\Iterables;
 use App\Service\OwnedItemsManager;
+use App\Service\RetryService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
@@ -30,6 +31,7 @@ final class DownloadCommand extends Command
         private readonly DownloadManager $downloadManager,
         private readonly HashCalculator $hashCalculator,
         private readonly Iterables $iterables,
+        private readonly RetryService $retryService,
     ) {
         parent::__construct();
     }
@@ -85,6 +87,20 @@ final class DownloadCommand extends Command
                 null,
                 InputOption::VALUE_REQUIRED,
                 'Specify a language to exclude. If a game supports this language, it will be skipped.',
+            )
+            ->addOption(
+                'retry',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'How many times should the download be retried in case of failure.',
+                3,
+            )
+            ->addOption(
+                'retry-delay',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'The delay in seconds between each retry.',
+                1,
             )
         ;
     }
@@ -149,91 +165,107 @@ final class DownloadCommand extends Command
             }
 
             foreach ($downloads as $download) {
-                $progress = $io->createProgressBar();
-                $progress->setMessage('Starting...');
-                ProgressBar::setPlaceholderFormatterDefinition(
-                    'bytes_current',
-                    $this->getBytesCallable($progress->getProgress(...)),
-                );
-                ProgressBar::setPlaceholderFormatterDefinition(
-                    'bytes_total',
-                    $this->getBytesCallable($progress->getMaxSteps(...)),
-                );
-
-                $format = ' %bytes_current% / %bytes_total% [%bar%] %percent:3s%% - %message%';
-                $progress->setFormat($format);
-
-                if ($operatingSystem !== null && $download->platform !== $operatingSystem->value) {
-                    if ($output->isVerbose()) {
-                        $io->writeln("{$download->name} ({$download->platform}, {$download->language}): Skipping because of OS filter");
-                    }
-                    continue;
-                }
-
-                if (
-                    $language !== null
-                    && $download->language !== $language->getLocalName()
-                    && (!$englishFallback || $download->language !== Language::English->getLocalName())
+                $this->retryService->retry(function () use (
+                    $noVerify,
+                    $game,
+                    $input,
+                    $englishFallback,
+                    $language,
+                    $output,
+                    $download,
+                    $operatingSystem,
+                    $io,
                 ) {
-                    if ($output->isVerbose()) {
-                        $io->writeln("{$download->name} ({$download->platform}, {$download->language}): Skipping because of language filter");
-                    }
-                    continue;
-                }
+                    $progress = $io->createProgressBar();
+                    $progress->setMessage('Starting...');
+                    ProgressBar::setPlaceholderFormatterDefinition(
+                        'bytes_current',
+                        $this->getBytesCallable($progress->getProgress(...)),
+                    );
+                    ProgressBar::setPlaceholderFormatterDefinition(
+                        'bytes_total',
+                        $this->getBytesCallable($progress->getMaxSteps(...)),
+                    );
 
-                $targetFile = "{$this->getTargetDir($input, $game)}/{$this->downloadManager->getFilename($download)}";
-                $startAt = null;
-                if (($download->md5 || $noVerify) && file_exists($targetFile)) {
-                    $md5 = $noVerify ? '' : $this->hashCalculator->getHash($targetFile);
-                    if (!$noVerify && $download->md5 === $md5) {
+                    $format = ' %bytes_current% / %bytes_total% [%bar%] %percent:3s%% - %message%';
+                    $progress->setFormat($format);
+
+                    if ($operatingSystem !== null && $download->platform !== $operatingSystem->value) {
                         if ($output->isVerbose()) {
-                            $io->writeln(
-                                "{$download->name} ({$download->platform}, {$download->language}): Skipping because it exists and is valid",
-                            );
+                            $io->writeln("{$download->name} ({$download->platform}, {$download->language}): Skipping because of OS filter");
                         }
-                        continue;
-                    } elseif ($noVerify) {
+
+                        return;
+                    }
+
+                    if (
+                        $language !== null
+                        && $download->language !== $language->getLocalName()
+                        && (!$englishFallback || $download->language !== Language::English->getLocalName())
+                    ) {
                         if ($output->isVerbose()) {
-                            $io->writeln("{$download->name} ({$download->platform}, {$download->language}): Skipping because it exists (--no-verify specified, not checking content)");
+                            $io->writeln("{$download->name} ({$download->platform}, {$download->language}): Skipping because of language filter");
                         }
-                        continue;
+
+                        return;
                     }
-                    $startAt = filesize($targetFile);
-                }
 
-                $progress->setMaxSteps(0);
-                $progress->setProgress(0);
-                $progress->setMessage("{$download->name} ({$download->platform}, {$download->language})");
+                    $targetFile = "{$this->getTargetDir($input, $game)}/{$this->downloadManager->getFilename($download)}";
+                    $startAt = null;
+                    if (($download->md5 || $noVerify) && file_exists($targetFile)) {
+                        $md5 = $noVerify ? '' : $this->hashCalculator->getHash($targetFile);
+                        if (!$noVerify && $download->md5 === $md5) {
+                            if ($output->isVerbose()) {
+                                $io->writeln(
+                                    "{$download->name} ({$download->platform}, {$download->language}): Skipping because it exists and is valid",
+                                );
+                            }
 
-                $responses = $this->downloadManager->download($download, function (int $current, int $total) use ($progress, $output) {
-                    if ($total > 0) {
-                        $progress->setMaxSteps($total);
-                        $progress->setProgress($current);
+                            return;
+                        } elseif ($noVerify) {
+                            if ($output->isVerbose()) {
+                                $io->writeln("{$download->name} ({$download->platform}, {$download->language}): Skipping because it exists (--no-verify specified, not checking content)");
+                            }
+
+                            return;
+                        }
+                        $startAt = filesize($targetFile);
                     }
-                }, $startAt);
 
-                if (file_exists($targetFile)) {
-                    $stream = fopen($targetFile, 'a+');
-                } else {
-                    $stream = fopen($targetFile, 'w+');
-                }
+                    $progress->setMaxSteps(0);
+                    $progress->setProgress(0);
+                    $progress->setMessage("{$download->name} ({$download->platform}, {$download->language})");
 
-                $hash = hash_init('md5');
-                if ($startAt !== null) {
-                    hash_update($hash, file_get_contents($targetFile));
-                }
-                foreach ($responses as $response) {
-                    $chunk = $response->getContent();
-                    fwrite($stream, $chunk);
-                    hash_update($hash, $chunk);
-                }
-                if (!$noVerify && $download->md5 && $download->md5 !== hash_final($hash)) {
-                    $io->warning("{$download->name} ({$download->platform}, {$download->language}) failed hash check");
-                }
-                fclose($stream);
+                    $responses = $this->downloadManager->download($download, function (int $current, int $total) use ($progress, $output) {
+                        if ($total > 0) {
+                            $progress->setMaxSteps($total);
+                            $progress->setProgress($current);
+                        }
+                    }, $startAt);
 
-                $progress->finish();
-                $io->newLine();
+                    if (file_exists($targetFile)) {
+                        $stream = fopen($targetFile, 'a+');
+                    } else {
+                        $stream = fopen($targetFile, 'w+');
+                    }
+
+                    $hash = hash_init('md5');
+                    if ($startAt !== null) {
+                        hash_update($hash, file_get_contents($targetFile));
+                    }
+                    foreach ($responses as $response) {
+                        $chunk = $response->getContent();
+                        fwrite($stream, $chunk);
+                        hash_update($hash, $chunk);
+                    }
+                    if (!$noVerify && $download->md5 && $download->md5 !== hash_final($hash)) {
+                        $io->warning("{$download->name} ({$download->platform}, {$download->language}) failed hash check");
+                    }
+                    fclose($stream);
+
+                    $progress->finish();
+                    $io->newLine();
+                }, $input->getOption('retry'), $input->getOption('retry-delay'));
             }
         }
 
