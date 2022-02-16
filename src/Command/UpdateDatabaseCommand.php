@@ -147,6 +147,7 @@ final class UpdateDatabaseCommand extends Command
                             $progressBar->setFormat(
                                 ' %current%/%max% [%bar%] %percent:3s%% - %message%'
                             );
+                            $progressBar->advance();
                         }
                         $progressBar->setMessage($item->getTitle());
                         $this->ownedItemsManager->storeSingleGameData(
