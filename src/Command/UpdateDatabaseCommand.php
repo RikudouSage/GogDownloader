@@ -9,7 +9,6 @@ use App\Enum\Language;
 use App\Enum\MediaType;
 use App\Enum\OperatingSystem;
 use App\Service\OwnedItemsManager;
-use App\Service\RetryService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -22,7 +21,6 @@ final class UpdateDatabaseCommand extends Command
 {
     public function __construct(
         private readonly OwnedItemsManager $ownedItemsManager,
-        private readonly RetryService $retryService,
     ) {
         parent::__construct();
     }
@@ -79,20 +77,6 @@ final class UpdateDatabaseCommand extends Command
                 InputOption::VALUE_NONE,
                 'Include hidden games in the update',
             )
-            ->addOption(
-                'retry',
-                null,
-                InputOption::VALUE_REQUIRED,
-                'How many times should the download be retried in case of failure.',
-                3,
-            )
-            ->addOption(
-                'retry-delay',
-                null,
-                InputOption::VALUE_REQUIRED,
-                'The delay in seconds between each retry.',
-                1,
-            )
             ->setAliases(['update'])
         ;
     }
@@ -133,19 +117,17 @@ final class UpdateDatabaseCommand extends Command
             }
             $progressBar = null;
             foreach ($items as $item) {
-                $this->retryService->retry(function () use ($item, $count, $io, &$progressBar) {
-                    if ($progressBar === null) {
-                        $progressBar = $io->createProgressBar($count);
-                        $progressBar->setFormat(
-                            ' %current%/%max% [%bar%] %percent:3s%% - %message%'
-                        );
-                    }
-                    $progressBar->setMessage($item->getTitle());
-                    $progressBar->advance();
-                    $this->ownedItemsManager->storeSingleGameData(
-                        $this->ownedItemsManager->getItemDetail($item),
+                if ($progressBar === null) {
+                    $progressBar = $io->createProgressBar($count);
+                    $progressBar->setFormat(
+                        ' %current%/%max% [%bar%] %percent:3s%% - %message%'
                     );
-                }, $input->getOption('retry'), $input->getOption('retry-delay'));
+                }
+                $progressBar->setMessage($item->getTitle());
+                $progressBar->advance();
+                $this->ownedItemsManager->storeSingleGameData(
+                    $this->ownedItemsManager->getItemDetail($item),
+                );
             }
             $progressBar?->finish();
         }
