@@ -8,6 +8,7 @@ use App\DTO\SearchFilter;
 use App\Enum\Language;
 use App\Enum\MediaType;
 use App\Enum\OperatingSystem;
+use App\Exception\TooManyRetriesException;
 use App\Service\OwnedItemsManager;
 use App\Service\RetryService;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -93,6 +94,12 @@ final class UpdateDatabaseCommand extends Command
                 'The delay in seconds between each retry.',
                 1,
             )
+            ->addOption(
+                'skip-errors',
+                null,
+                InputOption::VALUE_NONE,
+                "Skip games that for whatever reason couldn't be downloaded"
+            )
             ->setAliases(['update'])
         ;
     }
@@ -133,19 +140,26 @@ final class UpdateDatabaseCommand extends Command
             }
             $progressBar = null;
             foreach ($items as $item) {
-                $this->retryService->retry(function () use ($item, $count, $io, &$progressBar) {
-                    if ($progressBar === null) {
-                        $progressBar = $io->createProgressBar($count);
-                        $progressBar->setFormat(
-                            ' %current%/%max% [%bar%] %percent:3s%% - %message%'
+                try {
+                    $this->retryService->retry(function () use ($item, $count, $io, &$progressBar) {
+                        if ($progressBar === null) {
+                            $progressBar = $io->createProgressBar($count);
+                            $progressBar->setFormat(
+                                ' %current%/%max% [%bar%] %percent:3s%% - %message%'
+                            );
+                        }
+                        $progressBar->setMessage($item->getTitle());
+                        $progressBar->advance();
+                        $this->ownedItemsManager->storeSingleGameData(
+                            $this->ownedItemsManager->getItemDetail($item),
                         );
+                    }, $input->getOption('retry'), $input->getOption('retry-delay'));
+                } catch (TooManyRetriesException $e) {
+                    if (!$input->getOption('skip-errors')) {
+                        throw $e;
                     }
-                    $progressBar->setMessage($item->getTitle());
-                    $progressBar->advance();
-                    $this->ownedItemsManager->storeSingleGameData(
-                        $this->ownedItemsManager->getItemDetail($item),
-                    );
-                }, $input->getOption('retry'), $input->getOption('retry-delay'));
+                    $io->note("{$item->getTitle()} couldn't be downloaded");
+                }
             }
             $progressBar?->finish();
         }
