@@ -149,10 +149,10 @@ final class UpdateDatabaseCommand extends Command
                             );
                         }
                         $progressBar->setMessage($item->getTitle());
-                        $progressBar->advance();
                         $this->ownedItemsManager->storeSingleGameData(
                             $this->ownedItemsManager->getItemDetail($item),
                         );
+                        $progressBar->advance();
                     }, $input->getOption('retry'), $input->getOption('retry-delay'));
                 } catch (TooManyRetriesException $e) {
                     if (!$input->getOption('skip-errors')) {
