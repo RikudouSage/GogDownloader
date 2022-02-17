@@ -12,6 +12,7 @@ use App\DTO\Url;
 use App\Enum\MediaType;
 use App\Exception\AuthorizationException;
 use App\Service\Persistence\PersistenceManager;
+use Exception;
 use JsonException;
 use ReflectionException;
 use ReflectionProperty;
@@ -185,6 +186,12 @@ final class OwnedItemsManager
             try {
                 $response = new SimpleXMLElement($response->getContent());
             } catch (ClientExceptionInterface) {
+                return null;
+            } catch (Exception $e) {
+                if (!str_contains($e->getMessage(), 'String could not be parsed as XML')) {
+                    throw $e;
+                }
+
                 return null;
             }
 
