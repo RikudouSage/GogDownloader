@@ -185,7 +185,7 @@ final class OwnedItemsManager
 
             try {
                 $response = new SimpleXMLElement($response->getContent());
-            } catch (ClientExceptionInterface) {
+            } catch (ClientExceptionInterface | TransportExceptionInterface | ServerExceptionInterface) {
                 return null;
             } catch (Exception $e) {
                 if (!str_contains($e->getMessage(), 'String could not be parsed as XML')) {
