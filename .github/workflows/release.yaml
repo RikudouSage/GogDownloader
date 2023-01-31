@@ -12,6 +12,10 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     steps:
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
       - name: Extract Version Name
         id: extract_name
         uses: actions/github-script@v4
