@@ -14,8 +14,8 @@ $application = $container->get(Application::class);
 assert($application instanceof Application);
 $application->setName('gog-downloader');
 $application->setVersion(
-    file_exists(__DIR__ . '/.appversion')
-    ? file_get_contents(__DIR__ . '/.appversion')
+    file_exists(__DIR__ . '/appversion')
+    ? file_get_contents(__DIR__ . '/appversion')
     : 'dev-version',
 );
 
