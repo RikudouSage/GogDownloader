@@ -227,13 +227,13 @@ Options:
 
 ```
 Description:
-  Login via username and password. May fail due to recaptcha, prefer code login.
+  Login via email and password. May fail due to recaptcha, prefer code login.
 
 Usage:
-  login [options] [--] [<username>]
+  login [options] [--] [<email>]
 
 Arguments:
-  username                 Username to log in as, if empty will be asked interactively
+  email                    Email to log in as, if empty will be asked interactively
 
 Options:
       --password=PASSWORD  Your password. It's recommended to let the app ask for your password interactively instead of specifying it here.
@@ -274,22 +274,23 @@ Usage:
   update
 
 Options:
-      --new-only                 Download information only about new games
-  -u, --updated-only             Download information only about updated games
-  -c, --clear                    Clear local database before updating it
-  -s, --search=SEARCH            Update only games that match the given search
-  -o, --os=OS                    Filter by OS, allowed values are: windows, mac, linux
-  -l, --language=LANGUAGE        Filter by language, for list of languages run "languages"
-      --include-hidden           Include hidden games in the update
-      --retry=RETRY              How many times should the download be retried in case of failure. [default: 3]
-      --retry-delay=RETRY-DELAY  The delay in seconds between each retry. [default: 1]
-      --skip-errors              Skip games that for whatever reason couldn't be downloaded
-  -h, --help                     Display help for the given command. When no command is given display help for the list command
-  -q, --quiet                    Do not output any message
-  -V, --version                  Display this application version
-      --ansi|--no-ansi           Force (or disable --no-ansi) ANSI output
-  -n, --no-interaction           Do not ask any interactive question
-  -v|vv|vvv, --verbose           Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug
+      --new-only                   Download information only about new games
+  -u, --updated-only               Download information only about updated games
+  -c, --clear                      Clear local database before updating it
+  -s, --search=SEARCH              Update only games that match the given search
+  -o, --os=OS                      Filter by OS, allowed values are: windows, mac, linux
+  -l, --language=LANGUAGE          Filter by language, for list of languages run "languages"
+      --include-hidden             Include hidden games in the update
+      --retry=RETRY                How many times should the download be retried in case of failure. [default: 3]
+      --retry-delay=RETRY-DELAY    The delay in seconds between each retry. [default: 1]
+      --skip-errors                Skip games that for whatever reason couldn't be downloaded
+      --idle-timeout=IDLE-TIMEOUT  Set the idle timeout for http requests [default: 3]
+  -h, --help                       Display help for the given command. When no command is given display help for the list command
+  -q, --quiet                      Do not output any message
+  -V, --version                    Display this application version
+      --ansi|--no-ansi             Force (or disable --no-ansi) ANSI output
+  -n, --no-interaction             Do not ask any interactive question
+  -v|vv|vvv, --verbose             Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug
 ```
 
 ### download
@@ -302,7 +303,7 @@ Usage:
   download [options] [--] [<directory>]
 
 Arguments:
-  directory                        The target directory, defaults to current dir. [default: "/Downloads"]
+  directory                                                    The target directory, defaults to current dir. [default: "/Downloads"]
 
 Options:
       --no-verify                                              Set this flag to disable verification of file content before downloading. Disables resuming of downloads.
@@ -314,6 +315,7 @@ Options:
       --retry=RETRY                                            How many times should the download be retried in case of failure. [default: 3]
       --retry-delay=RETRY-DELAY                                The delay in seconds between each retry. [default: 1]
       --skip-errors                                            Skip games that for whatever reason couldn't be downloaded
+      --idle-timeout=IDLE-TIMEOUT                              Set the idle timeout for http requests [default: 3]
   -h, --help                                                   Display help for the given command. When no command is given display help for the list command
   -q, --quiet                                                  Do not output any message
   -V, --version                                                Display this application version
