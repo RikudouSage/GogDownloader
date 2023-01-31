@@ -7,6 +7,7 @@ enum OperatingSystem: string
     case Windows = 'windows';
     case MacOS = 'mac';
     case Linux = 'linux';
+
     public function getAsNumbers(): string
     {
         $cases = match ($this) {

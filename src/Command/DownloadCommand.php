@@ -153,12 +153,12 @@ final class DownloadCommand extends Command
 
             if ($englishFallback && $language) {
                 $downloads = array_filter(
-                    $downloads,
+                    $game->downloads,
                     fn (DownloadDescription $download) => $download->language === $language->getLocalName()
                 );
                 if (!count($downloads)) {
                     $downloads = array_filter(
-                        $downloads,
+                        $game->downloads,
                         fn (DownloadDescription $download) => $download->language === Language::English->getLocalName(),
                     );
                 }

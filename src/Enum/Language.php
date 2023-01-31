@@ -32,6 +32,7 @@ enum Language: string
     case Ukrainian = 'uk';
     case Thai = 'th';
     case SimplifiedChinese = 'zh';
+
     public function getLocalName(): string
     {
         return match ($this) {
