@@ -109,6 +109,13 @@ final class DownloadCommand extends Command
                 InputOption::VALUE_NONE,
                 "Skip games that for whatever reason couldn't be downloaded"
             )
+            ->addOption(
+                'idle-timeout',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Set the idle timeout for http requests',
+                3,
+            )
         ;
     }
 
@@ -121,6 +128,7 @@ final class DownloadCommand extends Command
         $language = Language::tryFrom($input->getOption('language') ?? '');
         $englishFallback = $input->getOption('language-fallback-english');
         $excludeLanguage = Language::tryFrom($input->getOption('exclude-game-with-language') ?? '');
+        $timeout = $input->getOption('idle-timeout');
 
         if ($language !== null && $language !== Language::English && !$englishFallback) {
             $io->warning("GOG often has multiple language versions inside the English one. Those game files will be skipped. Specify --language-fallback-english to include English versions if your language's version doesn't exist.");
@@ -137,13 +145,13 @@ final class DownloadCommand extends Command
 
         $iterable = $input->getOption('update')
             ? $this->iterables->map(
-                $this->ownedItemsManager->getOwnedItems(MediaType::Game, $filter),
-                function (OwnedItemInfo $info) use ($output): GameDetail {
+                $this->ownedItemsManager->getOwnedItems(MediaType::Game, $filter, httpTimeout: $timeout),
+                function (OwnedItemInfo $info) use ($timeout, $output): GameDetail {
                     if ($output->isVerbose()) {
                         $output->writeln("Updating metadata for {$info->getTitle()}...");
                     }
 
-                    return $this->ownedItemsManager->getItemDetail($info);
+                    return $this->ownedItemsManager->getItemDetail($info, $timeout);
                 },
             )
             : $this->ownedItemsManager->getLocalGameData();
@@ -174,6 +182,7 @@ final class DownloadCommand extends Command
             foreach ($downloads as $download) {
                 try {
                     $this->retryService->retry(function () use (
+                        $timeout,
                         $noVerify,
                         $game,
                         $input,
@@ -218,7 +227,7 @@ final class DownloadCommand extends Command
                             return;
                         }
 
-                        $targetFile = "{$this->getTargetDir($input, $game)}/{$this->downloadManager->getFilename($download)}";
+                        $targetFile = "{$this->getTargetDir($input, $game)}/{$this->downloadManager->getFilename($download, $timeout)}";
                         $startAt = null;
                         if (($download->md5 || $noVerify) && file_exists($targetFile)) {
                             $md5 = $noVerify ? '' : $this->hashCalculator->getHash($targetFile);
@@ -249,7 +258,7 @@ final class DownloadCommand extends Command
                                 $progress->setMaxSteps($total);
                                 $progress->setProgress($current);
                             }
-                        }, $startAt);
+                        }, $startAt, $timeout);
 
                         if (file_exists($targetFile)) {
                             $stream = fopen($targetFile, 'a+');

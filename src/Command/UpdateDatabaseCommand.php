@@ -100,6 +100,13 @@ final class UpdateDatabaseCommand extends Command
                 InputOption::VALUE_NONE,
                 "Skip games that for whatever reason couldn't be downloaded"
             )
+            ->addOption(
+                'idle-timeout',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Set the idle timeout for http requests',
+                3,
+            )
             ->setAliases(['update'])
         ;
     }
@@ -114,6 +121,7 @@ final class UpdateDatabaseCommand extends Command
 
         $storedItems = $this->ownedItemsManager->getLocalGameData();
         $storedItemIds = array_map(fn (GameDetail $detail) => $detail->id, $storedItems);
+        $timeout = $input->getOption('idle-timeout');
 
         $filter = new SearchFilter(
             operatingSystem: OperatingSystem::tryFrom($input->getOption('os') ?? ''),
@@ -126,7 +134,8 @@ final class UpdateDatabaseCommand extends Command
             $items = $this->ownedItemsManager->getOwnedItems(
                 mediaType: $type,
                 filter: $filter,
-                productsCount: $count
+                productsCount: $count,
+                httpTimeout: $timeout,
             );
             if ($input->getOption('new-only')) {
                 $items = array_filter([...$items], fn (OwnedItemInfo $item) => !in_array($item->getId(), $storedItemIds));

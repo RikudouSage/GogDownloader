@@ -17,7 +17,7 @@ final class DownloadManager
     ) {
     }
 
-    public function getFilename(DownloadDescription $download): string
+    public function getFilename(DownloadDescription $download, int $httpTimeout = 3): string
     {
         $response = $this->httpClient->request(
             Request::METHOD_GET,
@@ -25,6 +25,7 @@ final class DownloadManager
             [
                 'auth_bearer' => (string) $this->authentication->getAuthorization(),
                 'max_redirects' => 0,
+                'timeout' => $httpTimeout,
             ]
         );
         $url = $response->getHeaders(false)['location'][0];
@@ -35,14 +36,19 @@ final class DownloadManager
         return $parts[array_key_last($parts)];
     }
 
-    public function download(DownloadDescription $download, callable $callback, ?int $startAt = null): ResponseStreamInterface
-    {
+    public function download(
+        DownloadDescription $download,
+        callable $callback,
+        ?int $startAt = null,
+        int $httpTimeout = 3,
+    ): ResponseStreamInterface {
         $response = $this->httpClient->request(
             Request::METHOD_GET,
             self::BASE_URL . $download->url,
             [
                 'auth_bearer' => (string) $this->authentication->getAuthorization(),
                 'max_redirects' => 0,
+                'timeout' => $httpTimeout,
             ]
         );
         $url = $response->getHeaders(false)['location'][0];
@@ -58,6 +64,7 @@ final class DownloadManager
                 'on_progress' => $callback,
                 'auth_bearer' => (string) $this->authentication->getAuthorization(),
                 'headers' => $headers,
+                'timeout' => $httpTimeout,
             ]
         );
 

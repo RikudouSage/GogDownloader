@@ -56,6 +56,7 @@ final class OwnedItemsManager
         MediaType $mediaType,
         SearchFilter $filter = new SearchFilter(),
         int &$productsCount = null,
+        int $httpTimeout = 3,
     ): iterable {
         $page = 1;
         $query = [
@@ -87,6 +88,7 @@ final class OwnedItemsManager
                 ),
                 [
                     'auth_bearer' => (string) $this->authorization->getAuthorization(),
+                    'timeout' => $httpTimeout,
                 ]
             );
 
@@ -109,11 +111,11 @@ final class OwnedItemsManager
         } while ($query['page'] <= $data['totalPages']);
     }
 
-    public function getItemDetail(OwnedItemInfo $item)
+    public function getItemDetail(OwnedItemInfo $item, int $httpTimeout = 3)
     {
         return match ($item->getType()) {
-            MediaType::Game => $this->getGameDetail($item),
-            MediaType::Movie => $this->getMovieDetail($item),
+            MediaType::Game => $this->getGameDetail($item, $httpTimeout),
+            MediaType::Movie => $this->getMovieDetail($item, $httpTimeout),
         };
     }
 
@@ -138,7 +140,7 @@ final class OwnedItemsManager
         return $this->persistence->getLocalGameData() ?? [];
     }
 
-    public function getChecksum(DownloadDescription $download, GameDetail $game): ?string
+    public function getChecksum(DownloadDescription $download, GameDetail $game, int $httpTimeout = 3): ?string
     {
         $parts = explode('/', $download->url);
         $id = $parts[array_key_last($parts)];
@@ -153,6 +155,7 @@ final class OwnedItemsManager
             ),
             [
                 'auth_bearer' => (string) $this->authorization->getAuthorization(),
+                'timeout' => $httpTimeout,
             ]
         );
 
@@ -174,6 +177,7 @@ final class OwnedItemsManager
                 $targetUrl,
                 [
                     'auth_bearer' => (string) $this->authorization->getAuthorization(),
+                    'timeout' => $httpTimeout,
                 ]
             );
             $response = json_decode($response->getContent(), true);
@@ -181,6 +185,9 @@ final class OwnedItemsManager
             $response = $this->httpClient->request(
                 Request::METHOD_GET,
                 $response['checksum'],
+                [
+                    'timeout' => $httpTimeout,
+                ]
             );
 
             try {
@@ -201,7 +208,7 @@ final class OwnedItemsManager
         return null;
     }
 
-    private function getGameDetail(OwnedItemInfo $item): GameDetail
+    private function getGameDetail(OwnedItemInfo $item, int $httpTimeout): GameDetail
     {
         $response = $this->httpClient->request(
             Request::METHOD_GET,
@@ -211,6 +218,7 @@ final class OwnedItemsManager
             ),
             [
                 'auth_bearer' => (string) $this->authorization->getAuthorization(),
+                'timeout' => $httpTimeout,
             ]
         );
 
@@ -218,14 +226,14 @@ final class OwnedItemsManager
             'id' => $item->getId(),
         ]);
         foreach ($detail->downloads as $download) {
-            $this->setMd5($download, $detail);
+            $this->setMd5($download, $detail, $httpTimeout);
         }
         assert($detail instanceof GameDetail);
 
         return $detail;
     }
 
-    private function getMovieDetail(OwnedItemInfo $item)
+    private function getMovieDetail(OwnedItemInfo $item, int $httpTimeout)
     {
         $response = $this->httpClient->request(
             Request::METHOD_GET,
@@ -235,6 +243,7 @@ final class OwnedItemsManager
             ),
             [
                 'auth_bearer' => (string) $this->authorization->getAuthorization(),
+                'timeout' => $httpTimeout,
             ]
         );
 
@@ -246,9 +255,9 @@ final class OwnedItemsManager
         return $detail;
     }
 
-    private function setMd5(DownloadDescription $download, GameDetail $game)
+    private function setMd5(DownloadDescription $download, GameDetail $game, int $httpTimeout)
     {
-        $md5 = $this->getChecksum($download, $game);
+        $md5 = $this->getChecksum($download, $game, $httpTimeout);
         if ($md5 === null) {
             $md5 = '';
         }
