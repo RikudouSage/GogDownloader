@@ -113,7 +113,7 @@ final class DownloadCommand extends Command
                 'idle-timeout',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Set the idle timeout for http requests',
+                'Set the idle timeout in seconds for http requests',
                 3,
             )
         ;

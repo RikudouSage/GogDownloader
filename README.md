@@ -68,9 +68,15 @@ As mentioned before, this method might fail due to recaptcha or two-factor auth.
 
 Before downloading you should update your local cache of all downloadable files.
 
+> Note: You may also use the `--update` flag in the download command to update database and download files in one
+> go, but using update command separately allows for finer control.
+
 This is done by command `update-database` or simply `update`:
 
 `gog-downloader update`
+
+> Note: On a slower system (like various NAS servers) you might get an error about reaching idle timeout.
+> This may be solved by increasing the --idle-timeout parameter.
 
 You can also filter games by language, operating system or by searching a game. You can also update only new games
 or games that have updates.
@@ -104,6 +110,9 @@ your given combination of os/language/search.
 ### Downloading games
 
 For downloading you use the `download` command: `gog-downloader download`.
+
+> Note: On a slower system (like various NAS servers) you might get an error about reaching idle timeout.
+> This may be solved by increasing the --idle-timeout parameter.
 
 You can filter by language and operating system. You can also fall back to English if the game doesn't support the
 language you specified. You can also specify the target directory
@@ -284,7 +293,7 @@ Options:
       --retry=RETRY                How many times should the download be retried in case of failure. [default: 3]
       --retry-delay=RETRY-DELAY    The delay in seconds between each retry. [default: 1]
       --skip-errors                Skip games that for whatever reason couldn't be downloaded
-      --idle-timeout=IDLE-TIMEOUT  Set the idle timeout for http requests [default: 3]
+      --idle-timeout=IDLE-TIMEOUT  Set the idle timeout in seconds for http requests [default: 3]
   -h, --help                       Display help for the given command. When no command is given display help for the list command
   -q, --quiet                      Do not output any message
   -V, --version                    Display this application version
@@ -315,7 +324,7 @@ Options:
       --retry=RETRY                                            How many times should the download be retried in case of failure. [default: 3]
       --retry-delay=RETRY-DELAY                                The delay in seconds between each retry. [default: 1]
       --skip-errors                                            Skip games that for whatever reason couldn't be downloaded
-      --idle-timeout=IDLE-TIMEOUT                              Set the idle timeout for http requests [default: 3]
+      --idle-timeout=IDLE-TIMEOUT                              Set the idle timeout in seconds for http requests [default: 3]
   -h, --help                                                   Display help for the given command. When no command is given display help for the list command
   -q, --quiet                                                  Do not output any message
   -V, --version                                                Display this application version
