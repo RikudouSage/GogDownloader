@@ -5,3 +5,4 @@
 /.php-cs-fixer.cache
 /composer.lock
 /gog-downloader.db
+/bin/.appversion
