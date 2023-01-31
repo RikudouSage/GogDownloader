@@ -30,7 +30,7 @@ jobs:
       - name: Set version
         env:
           VERSION: ${{ steps.extract_name.outputs.result }}
-        run: echo $VERSION > bin/.appversion
+        run: echo $VERSION > bin/appversion
       - name: Download phar builder
         run: wget https://github.com/clue/phar-composer/releases/download/v1.3.0/phar-composer-1.3.0.phar -O phar-composer.phar
       - name: Create PHAR
