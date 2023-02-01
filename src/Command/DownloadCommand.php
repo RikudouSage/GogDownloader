@@ -9,11 +9,13 @@ use App\DTO\SearchFilter;
 use App\Enum\Language;
 use App\Enum\MediaType;
 use App\Enum\OperatingSystem;
+use App\Enum\Setting;
 use App\Exception\TooManyRetriesException;
 use App\Service\DownloadManager;
 use App\Service\HashCalculator;
 use App\Service\Iterables;
 use App\Service\OwnedItemsManager;
+use App\Service\Persistence\PersistenceManager;
 use App\Service\RetryService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -33,19 +35,23 @@ final class DownloadCommand extends Command
         private readonly HashCalculator $hashCalculator,
         private readonly Iterables $iterables,
         private readonly RetryService $retryService,
+        private readonly PersistenceManager $persistence,
     ) {
         parent::__construct();
     }
 
     protected function configure()
     {
+        $defaultDirectory = $_ENV['DOWNLOAD_DIRECTORY']
+            ?? $this->persistence->getSetting(Setting::DownloadPath)
+            ?? getcwd();
         $this
             ->setDescription('Downloads all files from the local database (see update command). Can resume downloads unless --no-verify is specified.')
             ->addArgument(
                 'directory',
                 InputArgument::OPTIONAL,
                 'The target directory, defaults to current dir.',
-                $_ENV['DOWNLOAD_DIRECTORY'] ?? getcwd(),
+                $defaultDirectory,
             )
             ->addOption(
                 'no-verify',

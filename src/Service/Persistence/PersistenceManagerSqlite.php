@@ -4,6 +4,7 @@ namespace App\Service\Persistence;
 
 use App\DTO\Authorization;
 use App\DTO\GameDetail;
+use App\Enum\Setting;
 use App\Service\MigrationManager;
 use DateTimeImmutable;
 use JetBrains\PhpStorm\ExpectedValues;
@@ -104,6 +105,30 @@ final class PersistenceManagerSqlite extends AbstractPersistenceManager
         $prepared->execute([
             serialize($detail),
         ]);
+    }
+
+    public function storeSetting(Setting $setting, float|bool|int|string|null $value): void
+    {
+        $pdo = $this->getPdo(self::DATABASE);
+        $this->migrationManager->apply($pdo);
+
+        $prepared = $pdo->prepare('insert into settings (setting, value) VALUES (?, ?)');
+        $prepared->execute([
+            $setting->value,
+            json_encode($value),
+        ]);
+    }
+
+    public function getSetting(Setting $setting): int|string|float|bool|null
+    {
+        $pdo = $this->getPdo(self::DATABASE);
+        $this->migrationManager->apply($pdo);
+
+        $settingName = $setting->value;
+        $prepared = $pdo->prepare('select value from settings where setting = ?');
+        $prepared->bindParam(1, $settingName);
+
+        return $prepared->fetch()['value'] ?? null;
     }
 
     private function getPdo(

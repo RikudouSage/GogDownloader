@@ -4,12 +4,15 @@ namespace App\Service\Persistence;
 
 use App\DTO\Authorization;
 use App\DTO\GameDetail;
+use App\Enum\Setting;
 
 final class PersistenceManagerFiles extends AbstractPersistenceManager
 {
     private const AUTH_FILE = 'auth.db';
 
     private const GAME_FILE = 'games.db';
+
+    private const SETTINGS_FILE = 'settings.db';
 
     public function getAuthorization(): ?Authorization
     {
@@ -64,5 +67,25 @@ final class PersistenceManagerFiles extends AbstractPersistenceManager
         $details = $this->getLocalGameData();
         $details[] = $detail;
         $this->storeLocalGameData($details);
+    }
+
+    public function storeSetting(Setting $setting, float|bool|int|string|null $value): void
+    {
+        $file = $this->getFullPath(self::SETTINGS_FILE);
+        $content = file_exists($file) ? json_decode(file_get_contents($file), true) : [];
+        $content[$setting->value] = $value;
+
+        file_put_contents($file, json_encode($content));
+    }
+
+    public function getSetting(Setting $setting): int|string|float|bool|null
+    {
+        $file = $this->getFullPath(self::SETTINGS_FILE);
+        if (!file_exists($file)) {
+            return null;
+        }
+        $content = json_decode(file_get_contents($file), true);
+
+        return $content[$setting->value] ?? null;
     }
 }

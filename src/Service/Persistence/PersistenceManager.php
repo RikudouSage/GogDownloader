@@ -4,6 +4,7 @@ namespace App\Service\Persistence;
 
 use App\DTO\Authorization;
 use App\DTO\GameDetail;
+use App\Enum\Setting;
 
 interface PersistenceManager
 {
@@ -22,4 +23,8 @@ interface PersistenceManager
     public function getLocalGameData(): ?array;
 
     public function storeSingleGameDetail(GameDetail $detail): void;
+
+    public function storeSetting(Setting $setting, int|string|float|bool|null $value): void;
+
+    public function getSetting(Setting $setting): int|string|float|bool|null;
 }
