@@ -52,6 +52,7 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           tags: rikudousage/gog-downloader:${{ steps.extract_name.outputs.result }},rikudousage/gog-downloader:latest
+          push: true
       - name: Create a Release
         id: create_release
         uses: softprops/action-gh-release@v1
