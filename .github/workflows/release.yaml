@@ -42,18 +42,16 @@ jobs:
         with:
           username: rikudousage
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
-      - name: Create docker
-        env:
-          VERSION: ${{ steps.extract_name.outputs.result }}
-        run: | 
-          docker build -t rikudousage/gog-downloader:latest .
-          docker tag rikudousage/gog-downloader:latest rikudousage/gog-downloader:$VERSION
-      - name: Push docker
-        env:
-          VERSION: ${{ steps.extract_name.outputs.result }}
-        run: |
-          docker push rikudousage/gog-downloader:latest
-          docker push rikudousage/gog-downloader:$VERSION
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          tags: rikudousage/gog-downloader:${{ steps.extract_name.outputs.result }},rikudousage/gog-downloader:latest
       - name: Create a Release
         id: create_release
         uses: softprops/action-gh-release@v1
