@@ -43,3 +43,4 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           tags: rikudousage/gog-downloader:dev
+          push: true
