@@ -48,7 +48,7 @@ final readonly class StreamWrapperFileWriter implements FileWriter
         return md5_file($file->path);
     }
 
-    public function writeChunk(object $file, string $data): void
+    public function writeChunk(object $file, string $data, int $chunkSize): void
     {
         $file->write($data);
     }

@@ -37,7 +37,7 @@ interface FileWriter
     /**
      * @param T $file
      */
-    public function writeChunk(object $file, string $data): void;
+    public function writeChunk(object $file, string $data, int $chunkSize): void;
 
     /**
      * @param T $file

@@ -70,9 +70,9 @@ final readonly class S3FileWriter implements FileWriter
     {
     }
 
-    public function writeChunk(object $file, string $data): void
+    public function writeChunk(object $file, string $data, int $chunkSize): void
     {
-        $file->writeChunk($this->client, $data);
+        $file->writeChunk($this->client, $data, $chunkSize);
     }
 
     public function getMd5HashContext(object $file): HashContext

@@ -122,6 +122,12 @@ final class DownloadCommand extends Command
                 'Set the idle timeout in seconds for http requests',
                 3,
             )
+            ->addOption(
+                name: 'chunk-size',
+                mode: InputOption::VALUE_REQUIRED,
+                description: 'The chunk size in MB. Some file providers support sending parts of a file, this options sets the size of a single part. Cannot be lower than 5',
+                default: 10,
+            )
         ;
     }
 
@@ -135,6 +141,12 @@ final class DownloadCommand extends Command
         $englishFallback = $input->getOption('language-fallback-english');
         $excludeLanguage = Language::tryFrom($input->getOption('exclude-game-with-language') ?? '');
         $timeout = $input->getOption('idle-timeout');
+        $chunkSize = $input->getOption('chunk-size') * 1024 * 1024;
+        if ($chunkSize < 5 * 1024 * 1024) {
+            $io->error("The chunk size cannot be lower than 5 MB.");
+
+            return self::FAILURE;
+        }
 
         if ($language !== null && $language !== Language::English && !$englishFallback) {
             $io->warning("GOG often has multiple language versions inside the English one. Those game files will be skipped. Specify --language-fallback-english to include English versions if your language's version doesn't exist.");

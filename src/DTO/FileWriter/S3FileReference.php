@@ -6,7 +6,7 @@ use Aws\S3\S3Client;
 
 final class S3FileReference
 {
-    private const PART_SIZE = 10 * 1024 * 1024;
+    private const DEFAULT_CHUNK_SIZE = 10 * 1024 * 1024;
 
     private int $partNumber = 0;
     private ?string $openedObjectId = null;
@@ -14,6 +14,7 @@ final class S3FileReference
     /** @var array<array{PartNumber: int, ETag: string}> */
     private array $parts = [];
     private string $buffer = '';
+    private int $chunkSize = 0;
 
     private readonly string $tempKey;
 
@@ -35,11 +36,12 @@ final class S3FileReference
         }
     }
 
-    public function writeChunk(S3Client $client, string $data, bool $forceWrite = false): void
+    public function writeChunk(S3Client $client, string $data, int $chunkSize, bool $forceWrite = false): void
     {
         $this->client = $client;
+        $this->chunkSize = $chunkSize;
 
-        if (strlen($this->buffer . $data) < self::PART_SIZE && !$forceWrite) {
+        if (strlen($this->buffer . $data) < $chunkSize && !$forceWrite) {
             $this->buffer .= $data;
             return;
         }
@@ -48,7 +50,7 @@ final class S3FileReference
         $this->open($client);
 
         $result = $client->uploadPart([
-            'Body' => substr($data, 0, self::PART_SIZE),
+            'Body' => substr($data, 0, $chunkSize),
             'UploadId' => $this->openedObjectId,
             'Bucket' => $this->bucket,
             'Key' => $this->tempKey,
@@ -58,14 +60,14 @@ final class S3FileReference
             'PartNumber' => $this->partNumber,
             'ETag' => $result['ETag'],
         ];
-        $this->buffer = substr($data, self::PART_SIZE);
+        $this->buffer = substr($data, $chunkSize);
     }
 
     public function finalize(string $hash): void
     {
         if ($this->client !== null && (count($this->parts) || $this->buffer)) {
             while ($this->buffer) {
-                $this->writeChunk($this->client, $this->buffer, true);
+                $this->writeChunk($this->client, $this->buffer, $this->chunkSize ?: self::DEFAULT_CHUNK_SIZE, true);
             }
 
             $this->client->completeMultipartUpload([
