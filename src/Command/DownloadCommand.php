@@ -276,13 +276,13 @@ final class DownloadCommand extends Command
                         $hash = $writer->getMd5HashContext($targetFile);
                         foreach ($responses as $response) {
                             $chunk = $response->getContent();
-                            if (!$chunk) {
-                                continue;
-                            }
                             $writer->writeChunk($targetFile, $chunk);
                             hash_update($hash, $chunk);
                         }
-                        if (!$noVerify && $download->md5 && $download->md5 !== hash_final($hash)) {
+                        $hash = hash_final($hash);
+                        $writer->finalizeWriting($targetFile, $hash);
+
+                        if (!$noVerify && $download->md5 && $download->md5 !== $hash) {
                             $io->warning("{$download->name} ({$download->platform}, {$download->language}) failed hash check");
                         }
 

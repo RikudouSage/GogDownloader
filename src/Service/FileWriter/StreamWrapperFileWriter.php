@@ -73,4 +73,8 @@ final readonly class StreamWrapperFileWriter implements FileWriter
 
         return $hash;
     }
+
+    public function finalizeWriting(object $file, string $hash): void
+    {
+    }
 }

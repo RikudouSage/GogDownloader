@@ -3,15 +3,13 @@
 namespace App\DTO\FileWriter;
 
 use Aws\S3\S3Client;
-use HashContext;
 
 final class S3FileReference
 {
-    private const MINIMUM_PART_SIZE = 5 * 1024 * 1024;
+    private const MINIMUM_PART_SIZE = 10 * 1024 * 1024;
 
     private int $partNumber = 0;
     private ?string $openedObjectId = null;
-    private ?HashContext $hash = null;
     private ?S3Client $client = null;
     /** @var array<array{PartNumber: int, ETag: string}> */
     private array $parts = [];
@@ -31,19 +29,18 @@ final class S3FileReference
                 'Bucket' => $this->bucket,
                 'Key' => $this->key,
             ])->get('UploadId');
-            $this->hash = hash_init('md5');
         }
     }
 
     public function writeChunk(S3Client $client, string $data, bool $forceWrite = false): void
     {
         $this->client = $client;
-        $data = $this->buffer . $data;
 
-        if (strlen($data) < self::MINIMUM_PART_SIZE && !$forceWrite) {
+        if (strlen($this->buffer . $data) < self::MINIMUM_PART_SIZE && !$forceWrite) {
             $this->buffer .= $data;
             return;
         }
+        $data = $this->buffer . $data;
 
         $this->open($client);
 
@@ -58,13 +55,12 @@ final class S3FileReference
             'PartNumber' => $this->partNumber,
             'ETag' => $result['ETag'],
         ];
-        hash_update($this->hash, $data);
         $this->buffer = '';
     }
 
-    public function __destruct()
+    public function finalize(string $hash): void
     {
-        if ($this->client !== null && $this->openedObjectId !== null && $this->hash !== null && count($this->parts)) {
+        if ($this->client !== null && $this->openedObjectId !== null  && count($this->parts)) {
             if ($this->buffer) {
                 $this->writeChunk($this->client, $this->buffer, true);
             }
@@ -85,7 +81,7 @@ final class S3FileReference
                     'TagSet' => [
                         [
                             'Key' => 'md5_hash',
-                            'Value' => hash_final($this->hash),
+                            'Value' => $hash,
                         ],
                     ]
                 ]

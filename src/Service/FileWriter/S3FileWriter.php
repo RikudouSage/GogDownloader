@@ -46,7 +46,7 @@ final readonly class S3FileWriter implements FileWriter
 
     public function getSize(object $file): int
     {
-        $object = $this->client->getObject([
+        $object = $this->client->headObject([
             'Bucket' => $file->bucket,
             'Key' => $file->key,
         ]);
@@ -106,5 +106,10 @@ final readonly class S3FileWriter implements FileWriter
         $parts = explode('/', $path, 2);
 
         return new ExtractedS3Path($parts[0], $parts[1]);
+    }
+
+    public function finalizeWriting(object $file, string $hash): void
+    {
+        $file->finalize($hash);
     }
 }

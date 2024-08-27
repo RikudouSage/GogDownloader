@@ -43,4 +43,9 @@ interface FileWriter
      * @param T $file
      */
     public function getMd5HashContext(object $file): HashContext;
+
+    /**
+     * @param T $file
+     */
+    public function finalizeWriting(object $file, string $hash): void;
 }
