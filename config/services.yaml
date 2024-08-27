@@ -1,7 +1,8 @@
 parameters:
+  default_debug_value: false
   default_aws_region: us-east-1
   aws_region: '%env(default:default_aws_region:AWS_REGION)%'
-  debug_mode: '%env(bool:GOG_DOWNLOADER_DEBUG)%'
+  debug_mode: '%env(default:default_debug_value:bool:GOG_DOWNLOADER_DEBUG)%'
 
 services:
   _defaults:
