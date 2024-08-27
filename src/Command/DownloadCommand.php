@@ -13,7 +13,6 @@ use App\Enum\Setting;
 use App\Exception\TooManyRetriesException;
 use App\Service\DownloadManager;
 use App\Service\FileWriter\FileWriterLocator;
-use App\Service\HashCalculator;
 use App\Service\Iterables;
 use App\Service\OwnedItemsManager;
 use App\Service\Persistence\PersistenceManager;
@@ -33,7 +32,6 @@ final class DownloadCommand extends Command
     public function __construct(
         private readonly OwnedItemsManager $ownedItemsManager,
         private readonly DownloadManager $downloadManager,
-        private readonly HashCalculator $hashCalculator,
         private readonly Iterables $iterables,
         private readonly RetryService $retryService,
         private readonly PersistenceManager $persistence,
@@ -303,7 +301,7 @@ final class DownloadCommand extends Command
     private function getTargetDir(InputInterface $input, GameDetail $game): string
     {
         $dir = $input->getArgument('directory');
-        if (!str_starts_with($dir, '/')) {
+        if (!str_starts_with($dir, '/') && !preg_match('@^[0-9a-zA-Z.]+://.+$@', $dir)) {
             $dir = getcwd() . '/' . $dir;
         }
 

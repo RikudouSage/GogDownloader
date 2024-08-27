@@ -1,3 +1,7 @@
+parameters:
+  default_aws_region: us-east-1
+  aws_region: '%env(default:default_aws_region:AWS_REGION)%'
+
 services:
   _defaults:
     autowire: true
@@ -36,3 +40,8 @@ services:
   App\Service\FileWriter\FileWriterLocator:
     arguments:
       $writers: !tagged_iterator app.writer
+
+  Aws\S3\S3Client:
+    arguments:
+      - version: latest
+        region: '%aws_region%'

@@ -14,7 +14,7 @@ final readonly class StreamWrapperFileWriter implements FileWriter
 {
     public function supports(string $path): bool
     {
-        $regex = /** @lang RegExp */ '@^([a-zA-Z0-9.])+://.+@';
+        $regex = /** @lang RegExp */ '@^([a-zA-Z0-9.]+)://.+@';
         if (!preg_match($regex, $path, $matches)) {
             return true;
         }
@@ -58,14 +58,14 @@ final readonly class StreamWrapperFileWriter implements FileWriter
         mkdir($path, recursive: true);
     }
 
-    public function getMd5HashContext(object $targetFile): HashContext
+    public function getMd5HashContext(object $file): HashContext
     {
         $hash = hash_init('md5');
-        if (!$this->exists($targetFile)) {
+        if (!$this->exists($file)) {
             return $hash;
         }
 
-        $handle = $targetFile->open();
+        $handle = $file->open();
         rewind($handle);
         while (!feof($handle)) {
             hash_update($hash, fread($handle, 2 ** 14));

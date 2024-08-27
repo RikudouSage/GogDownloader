@@ -40,7 +40,7 @@ interface FileWriter
     public function writeChunk(object $file, string $data): void;
 
     /**
-     * @param T $targetFile
+     * @param T $file
      */
-    public function getMd5HashContext(object $targetFile): HashContext;
+    public function getMd5HashContext(object $file): HashContext;
 }
