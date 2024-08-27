@@ -5,8 +5,13 @@ namespace App\Service;
 use App\Exception\TooManyRetriesException;
 use Throwable;
 
-final class RetryService
+final readonly class RetryService
 {
+    public function __construct(
+        private bool $debug,
+    ) {
+    }
+
     /**
      * @throws TooManyRetriesException
      * @throws Throwable
@@ -20,6 +25,9 @@ final class RetryService
 
                 return;
             } catch (Throwable $e) {
+                if ($this->debug) {
+                    throw $e;
+                }
                 ++$retries;
                 if (!$this->matches($e, $exceptions)) {
                     throw $e;

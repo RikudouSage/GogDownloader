@@ -1,6 +1,7 @@
 parameters:
   default_aws_region: us-east-1
   aws_region: '%env(default:default_aws_region:AWS_REGION)%'
+  debug_mode: '%env(bool:GOG_DOWNLOADER_DEBUG)%'
 
 services:
   _defaults:
@@ -45,3 +46,7 @@ services:
     arguments:
       - version: latest
         region: '%aws_region%'
+
+  App\Service\RetryService:
+    arguments:
+      $debug: '%debug_mode%'
