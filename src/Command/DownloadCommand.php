@@ -12,6 +12,7 @@ use App\Enum\OperatingSystem;
 use App\Enum\Setting;
 use App\Exception\TooManyRetriesException;
 use App\Service\DownloadManager;
+use App\Service\FileWriter\FileWriterLocator;
 use App\Service\HashCalculator;
 use App\Service\Iterables;
 use App\Service\OwnedItemsManager;
@@ -36,6 +37,7 @@ final class DownloadCommand extends Command
         private readonly Iterables $iterables,
         private readonly RetryService $retryService,
         private readonly PersistenceManager $persistence,
+        private readonly FileWriterLocator $writerLocator,
     ) {
         parent::__construct();
     }
@@ -233,10 +235,17 @@ final class DownloadCommand extends Command
                             return;
                         }
 
-                        $targetFile = "{$this->getTargetDir($input, $game)}/{$this->downloadManager->getFilename($download, $timeout)}";
+                        $targetDir = $this->getTargetDir($input, $game);
+                        $writer = $this->writerLocator->getWriter($targetDir);
+                        if (!$writer->exists($targetDir)) {
+                            $writer->createDirectory($targetDir);
+                        }
+                        $filename = $this->downloadManager->getFilename($download, $timeout);
+                        $targetFile = $writer->getFileReference("{$targetDir}/{$filename}");
+
                         $startAt = null;
-                        if (($download->md5 || $noVerify) && file_exists($targetFile)) {
-                            $md5 = $noVerify ? '' : $this->hashCalculator->getHash($targetFile);
+                        if (($download->md5 || $noVerify) && $writer->exists($targetFile)) {
+                            $md5 = $noVerify ? '' : $writer->getMd5Hash($targetFile);
                             if (!$noVerify && $download->md5 === $md5) {
                                 if ($output->isVerbose()) {
                                     $io->writeln(
@@ -252,7 +261,7 @@ final class DownloadCommand extends Command
 
                                 return;
                             }
-                            $startAt = filesize($targetFile);
+                            $startAt = $writer->getSize($targetFile);
                         }
 
                         $progress->setMaxSteps(0);
@@ -266,25 +275,15 @@ final class DownloadCommand extends Command
                             }
                         }, $startAt, $timeout);
 
-                        if (file_exists($targetFile)) {
-                            $stream = fopen($targetFile, 'a+');
-                        } else {
-                            $stream = fopen($targetFile, 'w+');
-                        }
-
-                        $hash = hash_init('md5');
-                        if ($startAt !== null) {
-                            hash_update($hash, file_get_contents($targetFile));
-                        }
+                        $hash = $writer->getMd5HashContext($targetFile);
                         foreach ($responses as $response) {
                             $chunk = $response->getContent();
-                            fwrite($stream, $chunk);
+                            $writer->writeChunk($targetFile, $chunk);
                             hash_update($hash, $chunk);
                         }
                         if (!$noVerify && $download->md5 && $download->md5 !== hash_final($hash)) {
                             $io->warning("{$download->name} ({$download->platform}, {$download->language}) failed hash check");
                         }
-                        fclose($stream);
 
                         $progress->finish();
                         $io->newLine();
@@ -312,9 +311,6 @@ final class DownloadCommand extends Command
         $title = preg_replace('@_{2,}@', '_', $title);
 
         $dir = "{$dir}/{$title}";
-        if (!is_dir($dir)) {
-            mkdir($dir, recursive: true);
-        }
 
         return $dir;
     }

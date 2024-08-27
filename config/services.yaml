@@ -10,6 +10,9 @@ services:
     App\Migration\Migration:
       tags:
         - app.migration
+    App\Service\FileWriter\FileWriter:
+      tags:
+        - app.writer
 
   App\:
     resource: '../src'
@@ -29,3 +32,7 @@ services:
 
   App\Service\Persistence\PersistenceManager:
     factory: ['@App\Service\Factory\PersistenceManagerFactory', 'getPersistenceManager']
+
+  App\Service\FileWriter\FileWriterLocator:
+    arguments:
+      $writers: !tagged_iterator app.writer

@@ -9,7 +9,7 @@ use Symfony\Contracts\HttpClient\ResponseStreamInterface;
 
 final class DownloadManager
 {
-    private const BASE_URL = 'https://embed.gog.com/';
+    private const BASE_URL = 'https://embed.gog.com';
 
     public function __construct(
         private readonly HttpClientInterface $httpClient,
@@ -19,9 +19,10 @@ final class DownloadManager
 
     public function getFilename(DownloadDescription $download, int $httpTimeout = 3): string
     {
+        $url = self::BASE_URL . $download->url;
         $response = $this->httpClient->request(
             Request::METHOD_GET,
-            self::BASE_URL . $download->url,
+            $url,
             [
                 'auth_bearer' => (string) $this->authentication->getAuthorization(),
                 'max_redirects' => 0,
@@ -29,11 +30,8 @@ final class DownloadManager
             ]
         );
         $url = $response->getHeaders(false)['location'][0];
-        $query = parse_url($url, PHP_URL_QUERY);
-        parse_str($query, $parts);
-        $parts = explode('/', $parts['path']);
 
-        return $parts[array_key_last($parts)];
+        return pathinfo($url, PATHINFO_BASENAME);
     }
 
     public function download(
