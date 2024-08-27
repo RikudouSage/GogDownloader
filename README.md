@@ -171,6 +171,9 @@ export AWS_SECRET_ACCESS_KEY=super-secret
 gog-downloader download s3://gog-games-backup/Games
 ```
 
+> Warning: Even though the app does its best to clean up after itself, you should set up automatic cleaning
+> of uncompleted multipart uploads in your bucket settings.
+
 ## Download
 
 If you want to use the docker version, read below.
