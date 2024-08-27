@@ -63,7 +63,7 @@ final class S3FileReference
 
     public function finalize(string $hash): void
     {
-        if ($this->client !== null && $this->openedObjectId !== null  && count($this->parts)) {
+        if ($this->client !== null && (count($this->parts) || $this->buffer)) {
             while ($this->buffer) {
                 $this->writeChunk($this->client, $this->buffer, true);
             }
