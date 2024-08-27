@@ -50,6 +50,8 @@ final class S3FileReference
         if ($this->client !== null && $this->openedObjectId !== null && $this->hash !== null) {
             $this->client->completeMultipartUpload([
                 'UploadId' => $this->openedObjectId,
+                'Bucket' => $this->bucket,
+                'Key' => $this->key,
             ]);
 
             $this->client->putObjectTagging([
