@@ -398,7 +398,7 @@ final class DownloadCommand extends Command
             pcntl_signal_dispatch();
         }
         if ($this->exitRequested) {
-            throw new ExitException("Application has been terminated.");
+            throw new ExitException("Application has been terminated as requested previously.");
         }
     }
 }

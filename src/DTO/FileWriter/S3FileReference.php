@@ -78,6 +78,7 @@ final class S3FileReference
                     'Parts' => $this->parts,
                 ],
             ]);
+            $this->openedObjectId = null;
 
             while (!$this->client->doesObjectExistV2($this->bucket, $this->tempKey)) {
                 sleep(1);
@@ -95,6 +96,17 @@ final class S3FileReference
             $this->client->deleteObject([
                 'Bucket' => $this->bucket,
                 'Key' => $this->tempKey,
+            ]);
+        }
+    }
+
+    public function __destruct()
+    {
+        if ($this->client !== null && $this->openedObjectId !== null) {
+            $this->client->abortMultipartUpload([
+                'Bucket' => $this->bucket,
+                'Key' => $this->tempKey,
+                'UploadId' => $this->openedObjectId,
             ]);
         }
     }
