@@ -7,12 +7,15 @@ use HashContext;
 
 final class S3FileReference
 {
+    private const MINIMUM_PART_SIZE = 5 * 1024 * 1024;
+
     private int $partNumber = 0;
     private ?string $openedObjectId = null;
     private ?HashContext $hash = null;
     private ?S3Client $client = null;
     /** @var array<array{PartNumber: int, ETag: string}> */
     private array $parts = [];
+    private string $buffer = '';
 
     public function __construct(
         public readonly string $bucket,
@@ -32,9 +35,16 @@ final class S3FileReference
         }
     }
 
-    public function writeChunk(S3Client $client, string $data): void
+    public function writeChunk(S3Client $client, string $data, bool $forceWrite = false): void
     {
         $this->client = $client;
+        $data = $this->buffer . $data;
+
+        if (strlen($data) < self::MINIMUM_PART_SIZE && !$forceWrite) {
+            $this->buffer .= $data;
+            return;
+        }
+
         $this->open($client);
 
         $result = $client->uploadPart([
@@ -49,11 +59,16 @@ final class S3FileReference
             'ETag' => $result['ETag'],
         ];
         hash_update($this->hash, $data);
+        $this->buffer = '';
     }
 
     public function __destruct()
     {
         if ($this->client !== null && $this->openedObjectId !== null && $this->hash !== null && count($this->parts)) {
+            if ($this->buffer) {
+                $this->writeChunk($this->client, $this->buffer, true);
+            }
+
             $this->client->completeMultipartUpload([
                 'UploadId' => $this->openedObjectId,
                 'Bucket' => $this->bucket,
