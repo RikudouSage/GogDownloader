@@ -276,6 +276,9 @@ final class DownloadCommand extends Command
                         $hash = $writer->getMd5HashContext($targetFile);
                         foreach ($responses as $response) {
                             $chunk = $response->getContent();
+                            if (!$chunk) {
+                                continue;
+                            }
                             $writer->writeChunk($targetFile, $chunk);
                             hash_update($hash, $chunk);
                         }

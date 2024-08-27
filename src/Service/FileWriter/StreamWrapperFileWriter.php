@@ -68,7 +68,7 @@ final readonly class StreamWrapperFileWriter implements FileWriter
         $handle = $file->open();
         rewind($handle);
         while (!feof($handle)) {
-            hash_update($hash, fread($handle, 2 ** 14));
+            hash_update($hash, fread($handle, 2 ** 23));
         }
 
         return $hash;

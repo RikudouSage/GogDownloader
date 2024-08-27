@@ -11,6 +11,8 @@ final class S3FileReference
     private ?string $openedObjectId = null;
     private ?HashContext $hash = null;
     private ?S3Client $client = null;
+    /** @var array<array{PartNumber: int, ETag: string}> */
+    private array $parts = [];
 
     public function __construct(
         public readonly string $bucket,
@@ -35,23 +37,30 @@ final class S3FileReference
         $this->client = $client;
         $this->open($client);
 
-        $client->uploadPart([
+        $result = $client->uploadPart([
             'Body' => $data,
             'UploadId' => $this->openedObjectId,
             'Bucket' => $this->bucket,
             'Key' => $this->key,
             'PartNumber' => ++$this->partNumber,
         ]);
+        $this->parts[] = [
+            'PartNumber' => $this->partNumber,
+            'ETag' => $result['ETag'],
+        ];
         hash_update($this->hash, $data);
     }
 
     public function __destruct()
     {
-        if ($this->client !== null && $this->openedObjectId !== null && $this->hash !== null) {
+        if ($this->client !== null && $this->openedObjectId !== null && $this->hash !== null && count($this->parts)) {
             $this->client->completeMultipartUpload([
                 'UploadId' => $this->openedObjectId,
                 'Bucket' => $this->bucket,
                 'Key' => $this->key,
+                'MultipartUpload' => [
+                    'Parts' => $this->parts,
+                ],
             ]);
 
             $this->client->putObjectTagging([

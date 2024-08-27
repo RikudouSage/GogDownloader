@@ -5,6 +5,7 @@ namespace App\Service\FileWriter;
 use App\DTO\FileWriter\ExtractedS3Path;
 use App\DTO\FileWriter\S3FileReference;
 use Aws\S3\S3Client;
+use GuzzleHttp\Psr7\Stream;
 use HashContext;
 
 /**
@@ -84,9 +85,11 @@ final readonly class S3FileWriter implements FileWriter
             'Bucket' => $file->bucket,
             'Key' => $file->key,
         ])->get('Body');
+        assert($content instanceof Stream);
 
-        foreach ($content->getChunks() as $chunk) {
-            hash_update($hash, $chunk);
+        $chunkSize = 2 ** 23;
+        while (!$content->eof()) {
+            hash_update($hash, $content->read($chunkSize));
         }
 
         return $hash;
