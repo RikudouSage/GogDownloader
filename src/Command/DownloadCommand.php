@@ -10,6 +10,7 @@ use App\Enum\Language;
 use App\Enum\MediaType;
 use App\Enum\OperatingSystem;
 use App\Enum\Setting;
+use App\Exception\ExitException;
 use App\Exception\TooManyRetriesException;
 use App\Service\DownloadManager;
 use App\Service\FileWriter\FileWriterLocator;
@@ -29,6 +30,9 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand('download')]
 final class DownloadCommand extends Command
 {
+    private bool $canKillSafely = true;
+    private bool $exitRequested = false;
+
     public function __construct(
         private readonly OwnedItemsManager $ownedItemsManager,
         private readonly DownloadManager $downloadManager,
@@ -134,183 +138,194 @@ final class DownloadCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
+        try {
+            $this->handleSignals($io);
 
-        $noVerify = $input->getOption('no-verify');
-        $operatingSystem = OperatingSystem::tryFrom($input->getOption('os') ?? '');
-        $language = Language::tryFrom($input->getOption('language') ?? '');
-        $englishFallback = $input->getOption('language-fallback-english');
-        $excludeLanguage = Language::tryFrom($input->getOption('exclude-game-with-language') ?? '');
-        $timeout = $input->getOption('idle-timeout');
-        $chunkSize = $input->getOption('chunk-size') * 1024 * 1024;
-        if ($chunkSize < 5 * 1024 * 1024) {
-            $io->error("The chunk size cannot be lower than 5 MB.");
+            $noVerify = $input->getOption('no-verify');
+            $operatingSystem = OperatingSystem::tryFrom($input->getOption('os') ?? '');
+            $language = Language::tryFrom($input->getOption('language') ?? '');
+            $englishFallback = $input->getOption('language-fallback-english');
+            $excludeLanguage = Language::tryFrom($input->getOption('exclude-game-with-language') ?? '');
+            $timeout = $input->getOption('idle-timeout');
+            $chunkSize = $input->getOption('chunk-size') * 1024 * 1024;
+            if ($chunkSize < 5 * 1024 * 1024) {
+                $io->error("The chunk size cannot be lower than 5 MB.");
 
-            return self::FAILURE;
-        }
+                return self::FAILURE;
+            }
+            $this->dispatchSignals();
 
-        if ($language !== null && $language !== Language::English && !$englishFallback) {
-            $io->warning("GOG often has multiple language versions inside the English one. Those game files will be skipped. Specify --language-fallback-english to include English versions if your language's version doesn't exist.");
-        }
+            if ($language !== null && $language !== Language::English && !$englishFallback) {
+                $io->warning("GOG often has multiple language versions inside the English one. Those game files will be skipped. Specify --language-fallback-english to include English versions if your language's version doesn't exist.");
+            }
 
-        if ($input->getOption('update') && $output->isVerbose()) {
-            $io->info('The --update flag specified, skipping local database and downloading metadata anew');
-        }
+            if ($input->getOption('update') && $output->isVerbose()) {
+                $io->info('The --update flag specified, skipping local database and downloading metadata anew');
+            }
 
-        $filter = new SearchFilter(
-            operatingSystem: $operatingSystem,
-            language: $language,
-        );
+            $filter = new SearchFilter(
+                operatingSystem: $operatingSystem,
+                language: $language,
+            );
 
-        $iterable = $input->getOption('update')
-            ? $this->iterables->map(
-                $this->ownedItemsManager->getOwnedItems(MediaType::Game, $filter, httpTimeout: $timeout),
-                function (OwnedItemInfo $info) use ($timeout, $output): GameDetail {
-                    if ($output->isVerbose()) {
-                        $output->writeln("Updating metadata for {$info->getTitle()}...");
-                    }
+            $iterable = $input->getOption('update')
+                ? $this->iterables->map(
+                    $this->ownedItemsManager->getOwnedItems(MediaType::Game, $filter, httpTimeout: $timeout),
+                    function (OwnedItemInfo $info) use ($timeout, $output): GameDetail {
+                        if ($output->isVerbose()) {
+                            $output->writeln("Updating metadata for {$info->getTitle()}...");
+                        }
 
-                    return $this->ownedItemsManager->getItemDetail($info, $timeout);
-                },
-            )
-            : $this->ownedItemsManager->getLocalGameData();
+                        return $this->ownedItemsManager->getItemDetail($info, $timeout);
+                    },
+                )
+                : $this->ownedItemsManager->getLocalGameData();
 
-        foreach ($iterable as $game) {
-            $downloads = $game->downloads;
+            $this->dispatchSignals();
+            foreach ($iterable as $game) {
+                $downloads = $game->downloads;
 
-            if ($englishFallback && $language) {
-                $downloads = array_filter(
-                    $game->downloads,
-                    fn (DownloadDescription $download) => $download->language === $language->getLocalName()
-                );
-                if (!count($downloads)) {
+                if ($englishFallback && $language) {
                     $downloads = array_filter(
                         $game->downloads,
-                        fn (DownloadDescription $download) => $download->language === Language::English->getLocalName(),
+                        fn (DownloadDescription $download) => $download->language === $language->getLocalName()
                     );
+                    if (!count($downloads)) {
+                        $downloads = array_filter(
+                            $game->downloads,
+                            fn (DownloadDescription $download) => $download->language === Language::English->getLocalName(),
+                        );
+                    }
                 }
-            }
-            if ($excludeLanguage) {
+                if ($excludeLanguage) {
+                    foreach ($downloads as $download) {
+                        if ($download->language === $excludeLanguage->getLocalName()) {
+                            continue 2;
+                        }
+                    }
+                }
+
                 foreach ($downloads as $download) {
-                    if ($download->language === $excludeLanguage->getLocalName()) {
-                        continue 2;
-                    }
-                }
-            }
-
-            foreach ($downloads as $download) {
-                try {
-                    $this->retryService->retry(function () use (
-                        $timeout,
-                        $noVerify,
-                        $game,
-                        $input,
-                        $englishFallback,
-                        $language,
-                        $output,
-                        $download,
-                        $operatingSystem,
-                        $io,
-                    ) {
-                        $progress = $io->createProgressBar();
-                        $progress->setMessage('Starting...');
-                        ProgressBar::setPlaceholderFormatterDefinition(
-                            'bytes_current',
-                            $this->getBytesCallable($progress->getProgress(...)),
-                        );
-                        ProgressBar::setPlaceholderFormatterDefinition(
-                            'bytes_total',
-                            $this->getBytesCallable($progress->getMaxSteps(...)),
-                        );
-
-                        $format = ' %bytes_current% / %bytes_total% [%bar%] %percent:3s%% - %message%';
-                        $progress->setFormat($format);
-
-                        if ($operatingSystem !== null && $download->platform !== $operatingSystem->value) {
-                            if ($output->isVerbose()) {
-                                $io->writeln("{$download->name} ({$download->platform}, {$download->language}): Skipping because of OS filter");
-                            }
-
-                            return;
-                        }
-
-                        if (
-                            $language !== null
-                            && $download->language !== $language->getLocalName()
-                            && (!$englishFallback || $download->language !== Language::English->getLocalName())
+                    try {
+                        $this->retryService->retry(function () use (
+                            $chunkSize,
+                            $timeout,
+                            $noVerify,
+                            $game,
+                            $input,
+                            $englishFallback,
+                            $language,
+                            $output,
+                            $download,
+                            $operatingSystem,
+                            $io,
                         ) {
-                            if ($output->isVerbose()) {
-                                $io->writeln("{$download->name} ({$download->platform}, {$download->language}): Skipping because of language filter");
-                            }
+                            $this->canKillSafely = false;
+                            $this->dispatchSignals();
+                            $progress = $io->createProgressBar();
+                            $progress->setMessage('Starting...');
+                            ProgressBar::setPlaceholderFormatterDefinition(
+                                'bytes_current',
+                                $this->getBytesCallable($progress->getProgress(...)),
+                            );
+                            ProgressBar::setPlaceholderFormatterDefinition(
+                                'bytes_total',
+                                $this->getBytesCallable($progress->getMaxSteps(...)),
+                            );
 
-                            return;
-                        }
+                            $format = ' %bytes_current% / %bytes_total% [%bar%] %percent:3s%% - %message%';
+                            $progress->setFormat($format);
 
-                        $targetDir = $this->getTargetDir($input, $game);
-                        $writer = $this->writerLocator->getWriter($targetDir);
-                        if (!$writer->exists($targetDir)) {
-                            $writer->createDirectory($targetDir);
-                        }
-                        $filename = $this->downloadManager->getFilename($download, $timeout);
-                        $targetFile = $writer->getFileReference("{$targetDir}/{$filename}");
-
-                        $startAt = null;
-                        if (($download->md5 || $noVerify) && $writer->exists($targetFile)) {
-                            $md5 = $noVerify ? '' : $writer->getMd5Hash($targetFile);
-                            if (!$noVerify && $download->md5 === $md5) {
+                            if ($operatingSystem !== null && $download->platform !== $operatingSystem->value) {
                                 if ($output->isVerbose()) {
-                                    $io->writeln(
-                                        "{$download->name} ({$download->platform}, {$download->language}): Skipping because it exists and is valid",
-                                    );
-                                }
-
-                                return;
-                            } elseif ($noVerify) {
-                                if ($output->isVerbose()) {
-                                    $io->writeln("{$download->name} ({$download->platform}, {$download->language}): Skipping because it exists (--no-verify specified, not checking content)");
+                                    $io->writeln("{$download->name} ({$download->platform}, {$download->language}): Skipping because of OS filter");
                                 }
 
                                 return;
                             }
-                            $startAt = $writer->getSize($targetFile);
-                        }
 
-                        $progress->setMaxSteps(0);
-                        $progress->setProgress(0);
-                        $progress->setMessage("{$download->name} ({$download->platform}, {$download->language})");
+                            if (
+                                $language !== null
+                                && $download->language !== $language->getLocalName()
+                                && (!$englishFallback || $download->language !== Language::English->getLocalName())
+                            ) {
+                                if ($output->isVerbose()) {
+                                    $io->writeln("{$download->name} ({$download->platform}, {$download->language}): Skipping because of language filter");
+                                }
 
-                        $responses = $this->downloadManager->download($download, function (int $current, int $total) use ($progress, $output) {
-                            if ($total > 0) {
-                                $progress->setMaxSteps($total);
-                                $progress->setProgress($current);
+                                return;
                             }
-                        }, $startAt, $timeout);
 
-                        $hash = $writer->getMd5HashContext($targetFile);
-                        foreach ($responses as $response) {
-                            $chunk = $response->getContent();
-                            $writer->writeChunk($targetFile, $chunk);
-                            hash_update($hash, $chunk);
+                            $targetDir = $this->getTargetDir($input, $game);
+                            $writer = $this->writerLocator->getWriter($targetDir);
+                            if (!$writer->exists($targetDir)) {
+                                $writer->createDirectory($targetDir);
+                            }
+                            $filename = $this->downloadManager->getFilename($download, $timeout);
+                            $targetFile = $writer->getFileReference("{$targetDir}/{$filename}");
+
+                            $startAt = null;
+                            if (($download->md5 || $noVerify) && $writer->exists($targetFile)) {
+                                $md5 = $noVerify ? '' : $writer->getMd5Hash($targetFile);
+                                if (!$noVerify && $download->md5 === $md5) {
+                                    if ($output->isVerbose()) {
+                                        $io->writeln(
+                                            "{$download->name} ({$download->platform}, {$download->language}): Skipping because it exists and is valid",
+                                        );
+                                    }
+
+                                    return;
+                                } elseif ($noVerify) {
+                                    if ($output->isVerbose()) {
+                                        $io->writeln("{$download->name} ({$download->platform}, {$download->language}): Skipping because it exists (--no-verify specified, not checking content)");
+                                    }
+
+                                    return;
+                                }
+                                $startAt = $writer->getSize($targetFile);
+                            }
+
+                            $progress->setMaxSteps(0);
+                            $progress->setProgress(0);
+                            $progress->setMessage("{$download->name} ({$download->platform}, {$download->language})");
+
+                            $responses = $this->downloadManager->download($download, function (int $current, int $total) use ($progress, $output) {
+                                if ($total > 0) {
+                                    $progress->setMaxSteps($total);
+                                    $progress->setProgress($current);
+                                }
+                            }, $startAt, $timeout);
+
+                            $hash = $writer->getMd5HashContext($targetFile);
+                            foreach ($responses as $response) {
+                                $chunk = $response->getContent();
+                                $writer->writeChunk($targetFile, $chunk, $chunkSize);
+                                hash_update($hash, $chunk);
+                            }
+                            $hash = hash_final($hash);
+                            $writer->finalizeWriting($targetFile, $hash);
+
+                            if (!$noVerify && $download->md5 && $download->md5 !== $hash) {
+                                $io->warning("{$download->name} ({$download->platform}, {$download->language}) failed hash check");
+                            }
+
+                            $progress->finish();
+                            $io->newLine();
+                        }, $input->getOption('retry'), $input->getOption('retry-delay'));
+                    } catch (TooManyRetriesException $e) {
+                        if (!$input->getOption('skip-errors')) {
+                            throw $e;
                         }
-                        $hash = hash_final($hash);
-                        $writer->finalizeWriting($targetFile, $hash);
-
-                        if (!$noVerify && $download->md5 && $download->md5 !== $hash) {
-                            $io->warning("{$download->name} ({$download->platform}, {$download->language}) failed hash check");
-                        }
-
-                        $progress->finish();
-                        $io->newLine();
-                    }, $input->getOption('retry'), $input->getOption('retry-delay'));
-                } catch (TooManyRetriesException $e) {
-                    if (!$input->getOption('skip-errors')) {
-                        throw $e;
+                        $io->note("{$download->name} couldn't be downloaded");
                     }
-                    $io->note("{$download->name} couldn't be downloaded");
                 }
             }
-        }
 
-        return self::SUCCESS;
+            return self::SUCCESS;
+        } catch (ExitException $e) {
+            $io->error($e->getMessage());
+            return self::FAILURE;
+        }
     }
 
     private function getTargetDir(InputInterface $input, GameDetail $game): string
@@ -355,5 +370,35 @@ final class DownloadCommand extends Command
 
             return "{$value} {$unit}";
         };
+    }
+
+    private function handleSignals(OutputInterface $output): void
+    {
+        if (!function_exists('pcntl_signal')) {
+            return;
+        }
+
+        pcntl_signal(SIGINT, function (int $signal, mixed $signalInfo) use ($output) {
+            if ($this->canKillSafely || $this->exitRequested) {
+                if (!$this->canKillSafely) {
+                    throw new ExitException("Application termination has been requested twice, forcing killing");
+                }
+                throw new ExitException("Application has been terminated");
+            }
+
+            $this->exitRequested = true;
+            $output->writeln('');
+            $output->writeln("Application exit has been requested, the application will stop once the current download finishes. Press CTRL+C again to force exit.");
+        });
+    }
+
+    private function dispatchSignals(): void
+    {
+        if (function_exists('pcntl_signal_dispatch')) {
+            pcntl_signal_dispatch();
+        }
+        if ($this->exitRequested) {
+            throw new ExitException("Application has been terminated.");
+        }
     }
 }
