@@ -143,6 +143,34 @@ So to download only games that support Czech either in-game or as a separate dow
 - `gog-downloader update --clear --language cz` (the `--clear` is there to delete any metadata from previous `update` runs)
 - `gog-downloader download --language cz --language-fallback-english`
 
+### Downloading to a S3-compatible storage
+
+Instead of storing the files on a local disk, you can upload them directly to a S3-compatible storage by using a path
+in the format of `s3://[bucket-name]/path/to/games/directory`. You can configure the default behavior using
+[environment variables](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html).
+
+**S3 example:**
+
+First define the env variables and then download the games:
+
+```shell
+export AWS_ACCESS_KEY_ID=my-access-key
+export AWS_SECRET_ACCESS_KEY=secret-string
+export AWS_REGION=eu-central-1
+
+gog-downloader download s3://gog-games-backup/Games
+```
+
+**R2 example:**
+
+```shell
+export AWS_ACCESS_KEY_ID=my-access-key
+export AWS_ENDPOINT_URL=https://my-r2-endpoint.eu.r2.cloudflarestorage.com
+export AWS_SECRET_ACCESS_KEY=super-secret
+
+gog-downloader download s3://gog-games-backup/Games
+```
+
 ## Download
 
 If you want to use the docker version, read below.
@@ -325,6 +353,7 @@ Options:
       --retry-delay=RETRY-DELAY                                The delay in seconds between each retry. [default: 1]
       --skip-errors                                            Skip games that for whatever reason couldn't be downloaded
       --idle-timeout=IDLE-TIMEOUT                              Set the idle timeout in seconds for http requests [default: 3]
+      --chunk-size=CHUNK-SIZE                                  The chunk size in MB. Some file providers support sending parts of a file, this options sets the size of a single part. Cannot be lower than 5 [default: 10]
   -h, --help                                                   Display help for the given command. When no command is given display help for the list command
   -q, --quiet                                                  Do not output any message
   -V, --version                                                Display this application version
