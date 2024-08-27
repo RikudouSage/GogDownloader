@@ -6,7 +6,7 @@ use Aws\S3\S3Client;
 
 final class S3FileReference
 {
-    private const MINIMUM_PART_SIZE = 10 * 1024 * 1024;
+    private const PART_SIZE = 10 * 1024 * 1024;
 
     private int $partNumber = 0;
     private ?string $openedObjectId = null;
@@ -15,10 +15,13 @@ final class S3FileReference
     private array $parts = [];
     private string $buffer = '';
 
+    private readonly string $tempKey;
+
     public function __construct(
         public readonly string $bucket,
         public readonly string $key,
     ) {
+        $this->tempKey = $this->key . '.gog-downloader.tmp';
     }
 
     public function open(S3Client $client): void
@@ -27,7 +30,7 @@ final class S3FileReference
         if ($this->openedObjectId === null) {
             $this->openedObjectId = $client->createMultipartUpload([
                 'Bucket' => $this->bucket,
-                'Key' => $this->key,
+                'Key' => $this->tempKey,
             ])->get('UploadId');
         }
     }
@@ -36,7 +39,7 @@ final class S3FileReference
     {
         $this->client = $client;
 
-        if (strlen($this->buffer . $data) < self::MINIMUM_PART_SIZE && !$forceWrite) {
+        if (strlen($this->buffer . $data) < self::PART_SIZE && !$forceWrite) {
             $this->buffer .= $data;
             return;
         }
@@ -45,46 +48,51 @@ final class S3FileReference
         $this->open($client);
 
         $result = $client->uploadPart([
-            'Body' => $data,
+            'Body' => substr($data, 0, self::PART_SIZE),
             'UploadId' => $this->openedObjectId,
             'Bucket' => $this->bucket,
-            'Key' => $this->key,
+            'Key' => $this->tempKey,
             'PartNumber' => ++$this->partNumber,
         ]);
         $this->parts[] = [
             'PartNumber' => $this->partNumber,
             'ETag' => $result['ETag'],
         ];
-        $this->buffer = '';
+        $this->buffer = substr($data, self::PART_SIZE);
     }
 
     public function finalize(string $hash): void
     {
         if ($this->client !== null && $this->openedObjectId !== null  && count($this->parts)) {
-            if ($this->buffer) {
+            while ($this->buffer) {
                 $this->writeChunk($this->client, $this->buffer, true);
             }
 
             $this->client->completeMultipartUpload([
                 'UploadId' => $this->openedObjectId,
                 'Bucket' => $this->bucket,
-                'Key' => $this->key,
+                'Key' => $this->tempKey,
                 'MultipartUpload' => [
                     'Parts' => $this->parts,
                 ],
             ]);
 
-            $this->client->putObjectTagging([
-                'Bucket' => $this->bucket,
+            while (!$this->client->doesObjectExistV2($this->bucket, $this->tempKey)) {
+                sleep(1);
+            }
+
+            $this->client->copyObject([
                 'Key' => $this->key,
-                'Tagging' => [
-                    'TagSet' => [
-                        [
-                            'Key' => 'md5_hash',
-                            'Value' => $hash,
-                        ],
-                    ]
-                ]
+                'Bucket' => $this->bucket,
+                'CopySource' => "{$this->bucket}/{$this->tempKey}",
+                'MetadataDirective' => 'REPLACE',
+                'Metadata' => [
+                    'md5_hash' => $hash,
+                ],
+            ]);
+            $this->client->deleteObject([
+                'Bucket' => $this->bucket,
+                'Key' => $this->tempKey,
             ]);
         }
     }

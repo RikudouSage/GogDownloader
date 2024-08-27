@@ -31,7 +31,7 @@ final class DownloadManager
         );
         $url = $response->getHeaders(false)['location'][0];
 
-        return pathinfo($url, PATHINFO_BASENAME);
+        return urldecode(pathinfo($url, PATHINFO_BASENAME));
     }
 
     public function download(

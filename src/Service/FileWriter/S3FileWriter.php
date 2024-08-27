@@ -56,18 +56,14 @@ final readonly class S3FileWriter implements FileWriter
 
     public function getMd5Hash(object $file): string
     {
-        $tags = $this->client->getObjectTagging([
+        $object = $this->client->headObject([
             'Bucket' => $file->bucket,
             'Key' => $file->key,
-        ])->get('TagSet');
+        ]);
 
-        foreach ($tags as $tag) {
-            if ($tag['Key'] === 'md5_hash') {
-                return $tag['Value'];
-            }
-        }
-
-        return hash_final($this->getMd5HashContext($file));
+        return array_find($object->get('Metadata'), function (string $value, string $key): string {
+            return $key === 'md5_hash';
+        }) ?? hash_final($this->getMd5HashContext($file));
     }
 
     public function createDirectory(string $path): void

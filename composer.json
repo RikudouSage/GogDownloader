@@ -16,7 +16,8 @@
         "symfony/css-selector": "^6.0",
         "ext-simplexml": "*",
         "ext-pdo": "*",
-        "aws/aws-sdk-php": "^3.320"
+        "aws/aws-sdk-php": "^3.320",
+        "symfony/polyfill-php84": "^1.30"
     },
     "autoload": {
         "psr-4": {
