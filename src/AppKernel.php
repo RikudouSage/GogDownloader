@@ -18,7 +18,7 @@ final class AppKernel extends Kernel
         yield new FrameworkBundle();
     }
 
-    public function registerContainerConfiguration(LoaderInterface $loader)
+    public function registerContainerConfiguration(LoaderInterface $loader): void
     {
         $loader->load(function (ContainerBuilder $container) use ($loader) {
             $kernelLoader = $loader->getResolver()->resolve(__FILE__);
@@ -63,13 +63,13 @@ final class AppKernel extends Kernel
         }
     }
 
-    protected function build(ContainerBuilder $container)
+    protected function build(ContainerBuilder $container): void
     {
         $container->addCompilerPass(new CommandLocatorCompilerPass());
     }
 
     private function getAppKey(): string
     {
-        return md5(__FILE__);
+        return md5(file_get_contents(__FILE__));
     }
 }
