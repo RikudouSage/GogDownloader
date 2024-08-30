@@ -175,6 +175,9 @@ final class DownloadCloudSavesCommand extends Command
 
                     $progress->advance();
                 }
+
+                $progress->finish();
+                $io->writeln('');
             }, $retryCount, $retryDelay);
         }
 
