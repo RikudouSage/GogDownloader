@@ -21,6 +21,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Throwable;
 
 #[AsCommand('download-saves', description: 'Download cloud saves for your games', aliases: ['saves'])]
 final class DownloadCloudSavesCommand extends Command
@@ -122,63 +123,74 @@ final class DownloadCloudSavesCommand extends Command
             if (!$this->cloudSaves->supports($game)) {
                 continue;
             }
-            $this->retryService->retry(function () use ($noVerify, $input, $io, $game) {
-                $progress = $io->createProgressBar();
-                $format = ' %current% / %max% [%bar%] %percent:3s%% - %message%';
-                $progress->setFormat($format);
-                $progress->setMessage("[{$game->title}] Fetching file list");
-                $saves = $this->cloudSaves->getGameSaves($game);
-                $progress->setMaxSteps(count($saves));
+            try {
+                $this->retryService->retry(function () use ($noVerify, $input, $io, $game) {
+                    $progress = $io->createProgressBar();
+                    $format = ' %current% / %max% [%bar%] %percent:3s%% - %message%';
+                    $progress->setFormat($format);
+                    $progress->setMessage("[{$game->title}] Fetching file list");
+                    $saves = $this->cloudSaves->getGameSaves($game);
+                    $progress->setMaxSteps(count($saves));
 
-                $targetDirectory = $this->getTargetDir($input, $game, 'SaveFiles');
-                $writer = $this->writerLocator->getWriter($targetDirectory);
-                if (!$writer->exists($targetDirectory)) {
-                    $writer->createDirectory($targetDirectory);
-                }
-
-                foreach ($saves as $save) {
-                    $progress->setMessage("[{$game->title}] Downloading {$save->name}");
-
-                    $filename = "{$targetDirectory}/{$save->name}";
-                    if (!$writer->exists(dirname($filename))) {
-                        $writer->createDirectory(dirname($filename));
+                    $targetDirectory = $this->getTargetDir($input, $game, 'SaveFiles');
+                    $writer = $this->writerLocator->getWriter($targetDirectory);
+                    if (!$writer->exists($targetDirectory)) {
+                        $writer->createDirectory($targetDirectory);
                     }
-                    $targetFile = $writer->getFileReference($filename);
 
-                    if (!$noVerify && $writer->exists($targetFile)) {
-                        $calculatedMd5 = $writer->getMd5Hash($targetFile);
-                        $calculatedMd5 = $this->persistence->getCompressedHash($calculatedMd5) ?? $calculatedMd5;
+                    foreach ($saves as $save) {
+                        $progress->setMessage("[{$game->title}] Downloading {$save->name}");
 
-                        if ($calculatedMd5 === $save->hash) {
-                            if ($io->isVerbose()) {
-                                $io->writeln("[{$game->title}] ({$save->name}): Skipping because it exists and is valid",);
-                            }
-                            $progress->advance();
-                            continue;
+                        $filename = "{$targetDirectory}/{$save->name}";
+                        if (!$writer->exists(dirname($filename))) {
+                            $writer->createDirectory(dirname($filename));
                         }
+                        $targetFile = $writer->getFileReference($filename);
+
+                        if (!$noVerify && $writer->exists($targetFile)) {
+                            $calculatedMd5 = $writer->getMd5Hash($targetFile);
+                            $calculatedMd5 = $this->persistence->getCompressedHash($calculatedMd5) ?? $calculatedMd5;
+
+                            if ($calculatedMd5 === $save->hash) {
+                                if ($io->isVerbose()) {
+                                    $io->writeln("[{$game->title}] ({$save->name}): Skipping because it exists and is valid",);
+                                }
+                                $progress->advance();
+                                continue;
+                            }
+                        }
+
+                        if ($writer->exists($targetFile)) {
+                            $writer->remove($targetFile);
+                        }
+
+                        $content = $this->cloudSaves->downloadSave($save, $game);
+
+                        if (!$noVerify && $save->hash && $save->hash !== $content->hash) {
+                            $io->warning("[{$game->title}] {$save->name} failed hash check");
+                        } elseif (!$noVerify) {
+                            $this->persistence->storeUncompressedHash($content->hash, md5($content->content));
+                        }
+
+                        $writer->writeChunk($targetFile, $content->content);
+                        $writer->finalizeWriting($targetFile, $content->hash);
+
+                        $progress->advance();
                     }
 
-                    if ($writer->exists($targetFile)) {
-                        $writer->remove($targetFile);
+                    $progress->finish();
+                    $io->writeln('');
+                }, $retryCount, $retryDelay);
+            } catch (Throwable $e) {
+                if ($skipErrors) {
+                    if ($output->isVerbose()) {
+                        $io->comment("[{$game->title}] Skipping the game because there were errors and --skip-errors is enabled");
                     }
-
-                    $content = $this->cloudSaves->downloadSave($save, $game);
-
-                    if (!$noVerify && $save->hash && $save->hash !== $content->hash) {
-                        $io->warning("[{$game->title}] {$save->name} failed hash check");
-                    } elseif (!$noVerify) {
-                        $this->persistence->storeUncompressedHash($content->hash, md5($content->content));
-                    }
-
-                    $writer->writeChunk($targetFile, $content->content);
-                    $writer->finalizeWriting($targetFile, $content->hash);
-
-                    $progress->advance();
+                    continue;
                 }
 
-                $progress->finish();
-                $io->writeln('');
-            }, $retryCount, $retryDelay);
+                throw $e;
+            }
         }
 
         $io->success('All configured save files have been downloaded.');

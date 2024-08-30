@@ -96,7 +96,7 @@ final readonly class CloudSavesManager
             self::BASE_URL,
             $this->authenticationManager->getUserInfo()->galaxyUserId,
             $oauth->clientId,
-            $file->name,
+            str_replace('#', '%23', $file->name),
         );
 
         $response = $this->httpClient->request(

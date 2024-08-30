@@ -8,6 +8,7 @@ use App\DTO\GameDetail;
 use App\DTO\GameInfo;
 use App\DTO\OAuthCredentials;
 use DateInterval;
+use JsonException;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -54,10 +55,15 @@ final readonly class GameMetadataManager
             return null;
         }
 
-        $result =  json_decode(zlib_decode($this->httpClient->request(
+        $response = $this->httpClient->request(
             Request::METHOD_GET,
             $builds[0]->link,
-        )->getContent()), true);
+        )->getContent();
+        try {
+            $result = json_decode($response, true, flags: JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            $result =  json_decode(zlib_decode($response), true);
+        }
 
         $clientId = $result['clientId'] ?? null;
         $clientSecret = $result['clientSecret'] ?? null;
