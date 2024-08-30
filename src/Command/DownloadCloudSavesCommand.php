@@ -132,6 +132,10 @@ final class DownloadCloudSavesCommand extends Command
                     $saves = $this->cloudSaves->getGameSaves($game);
                     $progress->setMaxSteps(count($saves));
 
+                    if (!count($saves)) {
+                        return;
+                    }
+
                     $targetDirectory = $this->getTargetDir($input, $game, 'SaveFiles');
                     $writer = $this->writerLocator->getWriter($targetDirectory);
                     if (!$writer->exists($targetDirectory)) {
