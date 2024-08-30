@@ -133,6 +133,9 @@ final class DownloadCloudSavesCommand extends Command
                     $progress->setMaxSteps(count($saves));
 
                     if (!count($saves)) {
+                        if ($io->isVerbose()) {
+                            $io->writeln("[{$game->title}] Skipping, because no save files were found");
+                        }
                         return;
                     }
 
