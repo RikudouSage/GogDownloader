@@ -22,14 +22,24 @@ final readonly class GameMetadataManager
     ) {
     }
 
-    public function getGameCredentials(GameInfo|GameDetail $game): ?Authorization
+    public function getGameAccessKey(GameInfo|GameDetail $game): ?Authorization
     {
+        $cacheItem = $this->cache->getItem("game.oauth.access_key.{$game->id}");
+        if ($cacheItem->isHit()) {
+            return $cacheItem->get();
+        }
+
         $oauthData = $this->getGameOAuthCredentials($game);
         if ($oauthData === null) {
             return null;
         }
 
-        return $this->authenticationManager->getGameAuthorization($oauthData->clientId, $oauthData->clientSecret);
+        $result = $this->authenticationManager->getGameAuthorization($oauthData->clientId, $oauthData->clientSecret);
+        $cacheItem->set($result);
+        $cacheItem->expiresAt($result->validUntil);
+        $this->cache->save($cacheItem);
+
+        return $result;
     }
 
     public function getGameOAuthCredentials(GameInfo|GameDetail $game): ?OAuthCredentials
