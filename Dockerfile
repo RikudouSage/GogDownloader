@@ -6,7 +6,7 @@ ENV DOWNLOAD_DIRECTORY=/Downloads
 RUN mkdir -p $CONFIG_DIRECTORY $DOWNLOAD_DIRECTORY \
     && chmod 0777 $CONFIG_DIRECTORY \
     && apk add libxml2-dev sqlite-dev \
-    && docker-php-ext-install simplexml pcntl pdo_sqlite \
+    && docker-php-ext-install simplexml pcntl pdo_sqlite zlib \
     && echo 'memory_limit = -1' >> /usr/local/etc/php/conf.d/docker-php-memory-limit.ini
 
 COPY gog-downloader /app/gog-downloader
