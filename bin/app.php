@@ -6,7 +6,7 @@ use Symfony\Component\Console\Application;
 
 require_once __DIR__ . "/../vendor/autoload.php";
 
-$kernel = new AppKernel("cli", false);
+$kernel = new AppKernel("cli", $_ENV['GOG_DOWNLOADER_DEBUG'] ?? false);
 $kernel->boot();
 
 $container = $kernel->getContainer();
