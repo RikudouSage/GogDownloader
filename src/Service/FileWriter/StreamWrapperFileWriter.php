@@ -45,10 +45,14 @@ final readonly class StreamWrapperFileWriter implements FileWriter
 
     public function getMd5Hash(object $file): string
     {
+        if ($this->exists($file->path . '.md5')) {
+            return file_get_contents($file->path . '.md5');
+        }
+
         return md5_file($file->path);
     }
 
-    public function writeChunk(object $file, string $data, int $chunkSize): void
+    public function writeChunk(object $file, string $data, int $chunkSize = self::DEFAULT_CHUNK_SIZE): void
     {
         $file->write($data);
     }
@@ -76,5 +80,6 @@ final readonly class StreamWrapperFileWriter implements FileWriter
 
     public function finalizeWriting(object $file, string $hash): void
     {
+        file_put_contents($file->path . '.md5', $hash);
     }
 }

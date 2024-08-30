@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\DTO\GameDetail;
 use App\DTO\GameInfo;
+use App\DTO\SaveFileContent;
 use App\DTO\SaveGameFile;
 use DateInterval;
 use Psr\Cache\CacheItemPoolInterface;
@@ -17,22 +18,11 @@ final readonly class CloudSavesManager
     public function __construct(
         private AuthenticationManager  $authenticationManager,
         private HttpClientInterface    $httpClient,
-        private OwnedItemsManager      $ownedItemsManager,
         private GameMetadataManager    $gameMetadataManager,
         private string                 $userAgent,
         private Serializer             $serializer,
         private CacheItemPoolInterface $cache,
     ) {
-    }
-
-    public function list()
-    {
-        foreach ($this->ownedItemsManager->getLocalGameData() as $game) {
-            if (!$this->supports($game)) {
-                continue;
-            }
-            var_dump($this->getGameSaves($game));exit;
-        }
     }
 
     public function supports(GameInfo|GameDetail $game): bool
@@ -75,7 +65,7 @@ final readonly class CloudSavesManager
             $this->authenticationManager->getUserInfo()->galaxyUserId,
             $oauth->clientId,
         );
-        $json = json_decode($this->httpClient->request(
+        $response = $this->httpClient->request(
             Request::METHOD_GET,
             $url,
             [
@@ -85,7 +75,8 @@ final readonly class CloudSavesManager
                     'User-Agent' => "{$this->userAgent} dont_sync_marker/true",
                 ],
             ],
-        )->getContent(), true);
+        );
+        $json = json_decode($response->getContent(), true);
 
         return array_filter(
             array_map(
@@ -93,6 +84,39 @@ final readonly class CloudSavesManager
                 $json,
             ),
             fn (SaveGameFile $saveFile) => $includeDeleted || !$saveFile->isDeleted(),
+        );
+    }
+
+    public function downloadSave(SaveGameFile $file, GameDetail|GameInfo $game): SaveFileContent
+    {
+        $oauth = $this->gameMetadataManager->getGameOAuthCredentials($game);
+        $credentials = $this->gameMetadataManager->getGameAccessKey($game);
+        $url = sprintf(
+            "%s/%s/%s/%s",
+            self::BASE_URL,
+            $this->authenticationManager->getUserInfo()->galaxyUserId,
+            $oauth->clientId,
+            $file->name,
+        );
+
+        $response = $this->httpClient->request(
+            Request::METHOD_GET,
+            $url,
+            [
+                'auth_bearer' => (string) $credentials,
+                'headers' => [
+                    'User-Agent' => "{$this->userAgent} dont_sync_marker/true",
+                    'Accept-Encoding' => 'deflate, gzip',
+                ],
+            ],
+        );
+
+        $raw = $response->getContent();
+        $hash = md5($raw);
+
+        return new SaveFileContent(
+            hash: $hash,
+            content: gzdecode($raw),
         );
     }
 }

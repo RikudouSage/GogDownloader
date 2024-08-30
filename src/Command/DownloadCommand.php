@@ -18,6 +18,7 @@ use App\Service\Iterables;
 use App\Service\OwnedItemsManager;
 use App\Service\Persistence\PersistenceManager;
 use App\Service\RetryService;
+use App\Trait\TargetDirectoryTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
@@ -30,6 +31,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand('download')]
 final class DownloadCommand extends Command
 {
+    use TargetDirectoryTrait;
+
     private bool $canKillSafely = true;
     private bool $exitRequested = false;
 
@@ -54,7 +57,7 @@ final class DownloadCommand extends Command
             ->addArgument(
                 'directory',
                 InputArgument::OPTIONAL,
-                'The target directory, defaults to current dir.',
+                'The target directory.',
                 $defaultDirectory,
             )
             ->addOption(
@@ -326,21 +329,6 @@ final class DownloadCommand extends Command
             $io->error($e->getMessage());
             return self::FAILURE;
         }
-    }
-
-    private function getTargetDir(InputInterface $input, GameDetail $game): string
-    {
-        $dir = $input->getArgument('directory');
-        if (!str_starts_with($dir, '/') && !preg_match('@^[0-9a-zA-Z.]+://.+$@', $dir)) {
-            $dir = getcwd() . '/' . $dir;
-        }
-
-        $title = preg_replace('@[^a-zA-Z-_0-9.]@', '_', $game->title);
-        $title = preg_replace('@_{2,}@', '_', $title);
-
-        $dir = "{$dir}/{$title}";
-
-        return $dir;
     }
 
     private function getBytesCallable(callable $targetMethod): callable

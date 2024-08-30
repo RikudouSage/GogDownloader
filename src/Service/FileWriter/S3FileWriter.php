@@ -70,7 +70,7 @@ final readonly class S3FileWriter implements FileWriter
     {
     }
 
-    public function writeChunk(object $file, string $data, int $chunkSize): void
+    public function writeChunk(object $file, string $data, int $chunkSize = self::DEFAULT_CHUNK_SIZE): void
     {
         $file->writeChunk($this->client, $data, $chunkSize);
     }

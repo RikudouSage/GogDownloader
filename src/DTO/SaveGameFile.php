@@ -11,7 +11,7 @@ final readonly class SaveGameFile
     public int $bytes;
     #[SerializedName('last_modified')]
     public string $lastModified;
-    public string $hash;
+    public ?string $hash;
     public string $name;
     #[SerializedName('content_type')]
     public string $contentType;
