@@ -17,7 +17,8 @@
         "ext-simplexml": "*",
         "ext-pdo": "*",
         "aws/aws-sdk-php": "^3.320",
-        "symfony/polyfill-php84": "^1.30"
+        "symfony/polyfill-php84": "^1.30",
+        "ext-zlib": "*"
     },
     "autoload": {
         "psr-4": {
