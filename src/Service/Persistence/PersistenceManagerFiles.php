@@ -14,6 +14,8 @@ final class PersistenceManagerFiles extends AbstractPersistenceManager
 
     private const SETTINGS_FILE = 'settings.db';
 
+    private const HASHES_FILE = 'hashes.db';
+
     public function getAuthorization(): ?Authorization
     {
         $file = $this->getFullPath(self::AUTH_FILE);
@@ -87,5 +89,25 @@ final class PersistenceManagerFiles extends AbstractPersistenceManager
         $content = json_decode(file_get_contents($file), true);
 
         return $content[$setting->value] ?? null;
+    }
+
+    public function getCompressedHash(string $uncompressedHash): ?string
+    {
+        $file = $this->getFullPath(self::HASHES_FILE);
+        if (!file_exists($file)) {
+            return null;
+        }
+        $content = json_decode(file_get_contents($file), true);
+
+        return $content[$uncompressedHash] ?? null;
+    }
+
+    public function storeUncompressedHash(string $compressedHash, string $uncompressedHash): void
+    {
+        $file = $this->getFullPath(self::HASHES_FILE);
+        $content = file_exists($file) ? json_decode(file_get_contents($file), true) : [];
+        $content[$uncompressedHash] = $compressedHash;
+
+        file_put_contents($file, json_encode($content));
     }
 }

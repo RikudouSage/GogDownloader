@@ -45,10 +45,6 @@ final readonly class StreamWrapperFileWriter implements FileWriter
 
     public function getMd5Hash(object $file): string
     {
-        if ($this->exists($file->path . '.md5')) {
-            return file_get_contents($file->path . '.md5');
-        }
-
         return md5_file($file->path);
     }
 
@@ -80,6 +76,10 @@ final readonly class StreamWrapperFileWriter implements FileWriter
 
     public function finalizeWriting(object $file, string $hash): void
     {
-        file_put_contents($file->path . '.md5', $hash);
+    }
+
+    public function remove(object $targetFile): void
+    {
+        unlink($targetFile->path);
     }
 }

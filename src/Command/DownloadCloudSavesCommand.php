@@ -33,7 +33,8 @@ final class DownloadCloudSavesCommand extends Command
         private readonly OwnedItemsManager  $ownedItemsManager,
         private readonly Iterables          $iterables,
         private readonly RetryService       $retryService,
-        private readonly FileWriterLocator  $writerLocator, private readonly HttpClientInterface $httpClient,
+        private readonly FileWriterLocator  $writerLocator,
+        private readonly HttpClientInterface $httpClient,
     ) {
         parent::__construct();
     }
@@ -143,18 +144,30 @@ final class DownloadCloudSavesCommand extends Command
                         $writer->createDirectory(dirname($filename));
                     }
                     $targetFile = $writer->getFileReference($filename);
-                    if (!$noVerify && $writer->exists($targetFile) && $writer->getMd5Hash($targetFile) === $save->hash) {
-                        if ($io->isVerbose()) {
-                            $io->writeln("[{$game->title}] ({$save->name}): Skipping because it exists and is valid",);
+
+                    if (!$noVerify && $writer->exists($targetFile)) {
+                        $calculatedMd5 = $writer->getMd5Hash($targetFile);
+                        $calculatedMd5 = $this->persistence->getCompressedHash($calculatedMd5) ?? $calculatedMd5;
+
+                        if ($calculatedMd5 === $save->hash) {
+                            if ($io->isVerbose()) {
+                                $io->writeln("[{$game->title}] ({$save->name}): Skipping because it exists and is valid",);
+                            }
+                            $progress->advance();
+                            continue;
                         }
-                        $progress->advance();
-                        continue;
+                    }
+
+                    if ($writer->exists($targetFile)) {
+                        $writer->remove($targetFile);
                     }
 
                     $content = $this->cloudSaves->downloadSave($save, $game);
 
                     if (!$noVerify && $save->hash && $save->hash !== $content->hash) {
                         $io->warning("[{$game->title}] {$save->name} failed hash check");
+                    } elseif (!$noVerify) {
+                        $this->persistence->storeUncompressedHash($content->hash, md5($content->content));
                     }
 
                     $writer->writeChunk($targetFile, $content->content);

@@ -50,4 +50,9 @@ interface FileWriter
      * @param T $file
      */
     public function finalizeWriting(object $file, string $hash): void;
+
+    /**
+     * @param T $targetFile
+     */
+    public function remove(object $targetFile): void;
 }

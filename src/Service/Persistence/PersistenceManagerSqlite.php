@@ -131,6 +131,31 @@ final class PersistenceManagerSqlite extends AbstractPersistenceManager
         return $prepared->fetch()['value'] ?? null;
     }
 
+    public function storeUncompressedHash(string $compressedHash, string $uncompressedHash): void
+    {
+        $pdo = $this->getPdo(self::DATABASE);
+        $this->migrationManager->apply($pdo);
+
+        $pdo->prepare('insert or ignore into compressed_file_hashes (compressed, uncompressed) values (?, ?)')->execute([
+            $compressedHash,
+            $uncompressedHash,
+        ]);
+    }
+
+    public function getCompressedHash(string $uncompressedHash): ?string
+    {
+        $pdo = $this->getPdo(self::DATABASE);
+        $this->migrationManager->apply($pdo);
+
+        $query = $pdo->prepare("select compressed from compressed_file_hashes where uncompressed = ?");
+        $query->bindParam(1, $uncompressedHash);
+        $query->execute();
+
+        $result = $query->fetch();
+
+        return $result['compressed'] ?? null;
+    }
+
     private function getPdo(
         #[ExpectedValues(valuesFromClass: self::class)]
         string $file

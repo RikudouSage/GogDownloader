@@ -16,7 +16,7 @@ final class S3FileReference
     private string $buffer = '';
     private int $chunkSize = 0;
 
-    private readonly string $tempKey;
+    public readonly string $tempKey;
 
     public function __construct(
         public readonly string $bucket,

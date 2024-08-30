@@ -108,4 +108,16 @@ final readonly class S3FileWriter implements FileWriter
     {
         $file->finalize($hash);
     }
+
+    public function remove(object $targetFile): void
+    {
+        $this->client->deleteObject([
+            'Bucket' => $targetFile->bucket,
+            'Key' => $targetFile->key,
+        ]);
+        $this->client->deleteObject([
+            'Bucket' => $targetFile->bucket,
+            'Key' => $targetFile->tempKey,
+        ]);
+    }
 }
