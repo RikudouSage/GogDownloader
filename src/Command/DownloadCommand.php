@@ -289,10 +289,10 @@ final class DownloadCommand extends Command
                             $progress->setProgress(0);
                             $progress->setMessage("{$download->name} ({$download->platform}, {$download->language})");
 
-                            $responses = $this->downloadManager->download($download, function (int $current, int $total) use ($progress, $output) {
+                            $responses = $this->downloadManager->download($download, function (int $current, int $total) use ($startAt, $progress, $output) {
                                 if ($total > 0) {
-                                    $progress->setMaxSteps($total);
-                                    $progress->setProgress($current);
+                                    $progress->setMaxSteps($total + ($startAt ?? 0));
+                                    $progress->setProgress($current + ($startAt ?? 0));
                                 }
                             }, $startAt, $timeout);
 
