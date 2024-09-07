@@ -1,8 +1,8 @@
 name: Build latest app
 on:
   push:
-#    branches:
-#      - main
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -15,7 +15,7 @@ jobs:
         with:
           php-version: 8.2
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Install Dependencies
         run: composer install --no-dev
       - name: Download phar builder
@@ -26,7 +26,7 @@ jobs:
         run: mv gog-downloader.phar gog-downloader
       - name: Create artifact
         if: ${{ !env.ACT }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: gog-downloader
           path: gog-downloader
@@ -55,14 +55,14 @@ jobs:
         with:
           php-version: 8.2
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Install Dependencies
         run: composer install --no-dev
       - name: Create Windows setup
         run: iscc setup.iss
       - name: Create artifact
         if: ${{ !env.ACT }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: GogDownloaderSetup.exe
           path: GogDownloaderSetup.exe
