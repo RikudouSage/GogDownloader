@@ -30,14 +30,6 @@ jobs:
         with:
           name: gog-downloader
           path: gog-downloader
-      - name: Create Windows setup
-        run: docker run --rm -i -v $(pwd):/work:rw -u $(id -u):$(id -g) amake/innosetup setup.iss
-      - name: Create artifact
-        if: ${{ !env.ACT }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: GogDownloaderSetup.exe
-          path: GogDownloaderSetup.exe
       - name: Login to DockerHub
         uses: docker/login-action@v1
         with:
@@ -54,3 +46,23 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: rikudousage/gog-downloader:dev
           push: true
+  setup:
+    name: Create Windows executable
+    runs-on: windows-latest
+    steps:
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+      - name: Checkout Code
+        uses: actions/checkout@v2
+      - name: Install Dependencies
+        run: composer install --no-dev
+      - name: Create Windows setup
+        run: iscc setup.iss
+      - name: Create artifact
+        if: ${{ !env.ACT }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: GogDownloaderSetup.exe
+          path: GogDownloaderSetup.exe
