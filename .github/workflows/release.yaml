@@ -49,6 +49,8 @@ jobs:
       - create_phar
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
       - name: Download built PHAR
         uses: actions/download-artifact@v4
         with:
