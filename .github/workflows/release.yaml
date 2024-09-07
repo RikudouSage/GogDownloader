@@ -53,6 +53,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: gog-downloader
+      - name: Extract Version Name
+        id: extract_name
+        uses: actions/github-script@v7
+        with:
+          result-encoding: string
+          script: |
+            return context.payload.ref.replace(/refs\/tags\/v/, '');
       - name: Login to DockerHub
         uses: docker/login-action@v1
         with:
