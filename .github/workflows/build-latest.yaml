@@ -31,7 +31,7 @@ jobs:
           name: gog-downloader
           path: gog-downloader
       - name: Create Windows setup
-        run: docker run --rm -i -v $PWD:/work:rw amake/innosetup setup.iss
+        run: docker run --rm -i -v $(pwd):/work:rw amake/innosetup setup.iss
       - name: Create artifact
         if: ${{ !env.ACT }}
         uses: actions/upload-artifact@v2
