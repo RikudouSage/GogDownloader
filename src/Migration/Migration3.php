@@ -26,7 +26,8 @@ final readonly class Migration3 implements Migration
             size float,
             url string,
             md5 string,
-            game_id integer
+            game_id integer,
+            foreign key (game_id) references games(id) on delete cascade on update cascade
         )');
 
         foreach ($games as $game) {

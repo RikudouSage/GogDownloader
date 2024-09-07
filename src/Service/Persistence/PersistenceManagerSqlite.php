@@ -112,7 +112,14 @@ final class PersistenceManagerSqlite extends AbstractPersistenceManager
         $pdo = $this->getPdo(self::DATABASE);
         $this->migrationManager->apply($pdo);
 
-        $pdo->prepare('insert or replace into games (title, cd_key, game_id) VALUES (?, ?, ?)')->execute([
+        $pdo->prepare(
+            'insert into games (title, cd_key, game_id)
+                   VALUES (?, ?, ?)
+                   ON CONFLICT DO UPDATE SET title   = excluded.title,
+                                             cd_key  = excluded.cd_key,
+                                             game_id = excluded.cd_key
+                   '
+        )->execute([
             $detail->title,
             $detail->cdKey ?: null,
             $detail->id,
@@ -192,6 +199,9 @@ final class PersistenceManagerSqlite extends AbstractPersistenceManager
         #[ExpectedValues(valuesFromClass: self::class)]
         string $file
     ): PDO {
-        return new PDO("sqlite:{$this->getFullPath($file)}");
+        $pdo = new PDO("sqlite:{$this->getFullPath($file)}");
+        $pdo->exec('PRAGMA foreign_keys = ON');
+
+        return $pdo;
     }
 }
