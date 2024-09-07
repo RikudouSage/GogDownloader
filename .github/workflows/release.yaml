@@ -18,13 +18,13 @@ jobs:
           php-version: 8.2
       - name: Extract Version Name
         id: extract_name
-        uses: actions/github-script@v4
+        uses: actions/github-script@v7
         with:
           result-encoding: string
           script: |
             return context.payload.ref.replace(/refs\/tags\/v/, '');
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Install Dependencies
         run: composer install --no-dev
       - name: Set version
@@ -55,14 +55,16 @@ jobs:
           push: true
       - name: Create a Release
         id: create_release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           name: Release ${{ steps.extract_name.outputs.result }}
           draft: false
           prerelease: false
+          generate_release_notes: true
           body: |
             Either download the `gog-downloader` php binary below or use docker image `rikudousage/gog-downloader:${{ steps.extract_name.outputs.result }}`.
+            If you're on Windows, you can also download the `GogDownloaderSetup.exe` installer.
           files: |
             gog-downloader

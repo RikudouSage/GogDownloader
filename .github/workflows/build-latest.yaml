@@ -44,3 +44,11 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: rikudousage/gog-downloader:dev
           push: true
+      - name: Create Windows setup
+        run: docker run --rm -i -v $PWD:/work amake/innosetup setup.iss
+      - name: Create artifact
+        if: ${{ !env.ACT }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: GogDownloaderSetup.exe
+          path: GogDownloaderSetup.exe
