@@ -1,3 +1,6 @@
+> Important: Version 1.6.0 uses a new database format. All newer versions will migrate your existing data
+> but it's not possible to go back from 1.6.0 to a previous version.
+
 # gog-downloader
 
 PHP based tool to download the games you have bought on GOG to your hard drive.

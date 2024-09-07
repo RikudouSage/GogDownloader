@@ -6,6 +6,7 @@ use App\DTO\Authorization;
 use App\DTO\GameDetail;
 use App\Enum\Setting;
 use App\Service\MigrationManager;
+use App\Service\Serializer;
 use DateTimeImmutable;
 use JetBrains\PhpStorm\ExpectedValues;
 use PDO;
@@ -16,6 +17,7 @@ final class PersistenceManagerSqlite extends AbstractPersistenceManager
 
     public function __construct(
         private readonly MigrationManager $migrationManager,
+        private readonly Serializer $serializer,
     ) {
     }
 
@@ -90,7 +92,16 @@ final class PersistenceManagerSqlite extends AbstractPersistenceManager
 
         $result = [];
         while ($next = $query->fetch(PDO::FETCH_ASSOC)) {
-            $result[] = unserialize($next['serializedData']);
+            $downloadsQuery = $pdo->prepare('select * from downloads where game_id = ?');
+            $downloadsQuery->execute([$next['id']]);
+            $downloads = $downloadsQuery->fetchAll(PDO::FETCH_ASSOC);
+
+            $result[] = $this->serializer->deserialize([
+                'id' => $next['game_id'],
+                'title' => $next['title'],
+                'cdKey' => $next['cd_key'],
+                'downloads' => $downloads,
+            ], GameDetail::class);
         }
 
         return $result;
@@ -101,10 +112,35 @@ final class PersistenceManagerSqlite extends AbstractPersistenceManager
         $pdo = $this->getPdo(self::DATABASE);
         $this->migrationManager->apply($pdo);
 
-        $prepared = $pdo->prepare('insert into games (serializedData) VALUES (?)');
-        $prepared->execute([
-            serialize($detail),
+        $pdo->prepare(
+            'insert into games (title, cd_key, game_id)
+                   VALUES (?, ?, ?)
+                   ON CONFLICT DO UPDATE SET title   = excluded.title,
+                                             cd_key  = excluded.cd_key,
+                                             game_id = excluded.game_id
+                   '
+        )->execute([
+            $detail->title,
+            $detail->cdKey ?: null,
+            $detail->id,
         ]);
+
+        $query = $pdo->prepare('select id from games where game_id = ?');
+        $query->execute([$detail->id]);
+        $id = $query->fetch(PDO::FETCH_ASSOC)['id'];
+
+        $pdo->prepare('delete from downloads where game_id = ?')->execute([$id]);
+        foreach ($detail->downloads as $download) {
+            $pdo->prepare('insert into downloads (language, platform, name, size, url, md5, game_id) VALUES (?, ?, ?, ?, ?, ?, ?)')->execute([
+                $download->language,
+                $download->platform,
+                $download->name,
+                $download->size,
+                $download->url,
+                $download->md5,
+                $id,
+            ]);
+        }
     }
 
     public function storeSetting(Setting $setting, float|bool|int|string|null $value): void
@@ -163,6 +199,9 @@ final class PersistenceManagerSqlite extends AbstractPersistenceManager
         #[ExpectedValues(valuesFromClass: self::class)]
         string $file
     ): PDO {
-        return new PDO("sqlite:{$this->getFullPath($file)}");
+        $pdo = new PDO("sqlite:{$this->getFullPath($file)}");
+        $pdo->exec('PRAGMA foreign_keys = ON');
+
+        return $pdo;
     }
 }
