@@ -8,8 +8,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  release:
-    name: Release
+  create_phar:
+    name: Create phar
     runs-on: ubuntu-latest
     steps:
       - name: Setup PHP
@@ -37,6 +37,22 @@ jobs:
         run: php -d phar.readonly=off phar-composer.phar build . gog-downloader.phar
       - name: Rename
         run: mv gog-downloader.phar gog-downloader
+      - name: Create artifact
+        if: ${{ !env.ACT }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: gog-downloader
+          path: gog-downloader
+  create_docker:
+    name: Create docker image
+    needs:
+      - create_phar
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download built PHAR
+        uses: actions/download-artifact@v4
+        with:
+          name: gog-downloader
       - name: Login to DockerHub
         uses: docker/login-action@v1
         with:
@@ -53,6 +69,53 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: rikudousage/gog-downloader:${{ steps.extract_name.outputs.result }},rikudousage/gog-downloader:latest
           push: true
+  create_setup:
+    name: Create Windows setup
+    runs-on: windows-latest
+    steps:
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+      - name: Extract Version Name
+        id: extract_name
+        uses: actions/github-script@v7
+        with:
+          result-encoding: string
+          script: |
+            return context.payload.ref.replace(/refs\/tags\/v/, '');
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Install Dependencies
+        run: composer install --no-dev
+      - name: Set version
+        env:
+          VERSION: ${{ steps.extract_name.outputs.result }}
+        run: echo $VERSION > bin/appversion
+      - name: Create Windows setup
+        run: iscc setup.iss
+      - name: Create artifact
+        if: ${{ !env.ACT }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: GogDownloaderSetup
+          path: GogDownloaderSetup.exe
+  create_release:
+    name: Create a release
+    runs-on: ubuntu-latest
+    needs:
+      - create_phar
+      - create_docker
+      - create_setup
+    steps:
+      - name: Download built PHAR
+        uses: actions/download-artifact@v4
+        with:
+          name: gog-downloader
+      - name: Download built Setup
+        uses: actions/download-artifact@v4
+        with:
+          name: GogDownloaderSetup
       - name: Create a Release
         id: create_release
         uses: softprops/action-gh-release@v2
@@ -63,8 +126,10 @@ jobs:
           draft: false
           prerelease: false
           generate_release_notes: true
+          fail_on_unmatched_files: true
           body: |
             Either download the `gog-downloader` php binary below or use docker image `rikudousage/gog-downloader:${{ steps.extract_name.outputs.result }}`.
             If you're on Windows, you can also download the `GogDownloaderSetup.exe` installer.
           files: |
             gog-downloader
+            GogDownloaderSetup.exe
