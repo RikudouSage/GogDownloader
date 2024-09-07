@@ -7,13 +7,13 @@ use App\DTO\MultipleValuesWrapper;
 use ReflectionProperty;
 use RuntimeException;
 
-final class DownloadDescriptionNormalizer implements MultipleValuesNormalizer
+final class DownloadDescriptionNormalizer implements SerializerNormalizer
 {
     public function __construct(
     ) {
     }
 
-    public function normalize(array $value, array $context = []): MultipleValuesWrapper
+    public function normalize(array $value, array $context = []): MultipleValuesWrapper|DownloadDescription
     {
         if (isset($value[0])) {
             $results = [];
@@ -32,6 +32,18 @@ final class DownloadDescriptionNormalizer implements MultipleValuesNormalizer
             }
 
             return new MultipleValuesWrapper($results);
+        }
+
+        if (isset($value['game_id'])) {
+            $object = new DownloadDescription();
+            $this->set($object, 'language', $value['language']);
+            $this->set($object, 'platform', $value['platform']);
+            $this->set($object, 'name', $value['name']);
+            $this->set($object, 'size', $value['size']);
+            $this->set($object, 'url', $value['url']);
+            $this->set($object, 'md5', $value['md5']);
+
+            return $object;
         }
 
         throw new RuntimeException('Invalid download description');
