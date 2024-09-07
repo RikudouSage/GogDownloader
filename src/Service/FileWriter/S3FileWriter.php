@@ -70,7 +70,7 @@ final readonly class S3FileWriter implements FileWriter
     {
     }
 
-    public function writeChunk(object $file, string $data, int $chunkSize): void
+    public function writeChunk(object $file, string $data, int $chunkSize = self::DEFAULT_CHUNK_SIZE): void
     {
         $file->writeChunk($this->client, $data, $chunkSize);
     }
@@ -107,5 +107,17 @@ final readonly class S3FileWriter implements FileWriter
     public function finalizeWriting(object $file, string $hash): void
     {
         $file->finalize($hash);
+    }
+
+    public function remove(object $targetFile): void
+    {
+        $this->client->deleteObject([
+            'Bucket' => $targetFile->bucket,
+            'Key' => $targetFile->key,
+        ]);
+        $this->client->deleteObject([
+            'Bucket' => $targetFile->bucket,
+            'Key' => $targetFile->tempKey,
+        ]);
     }
 }

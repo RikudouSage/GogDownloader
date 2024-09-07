@@ -11,6 +11,8 @@ use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 #[AutoconfigureTag(name: 'app.file_writer')]
 interface FileWriter
 {
+    public const DEFAULT_CHUNK_SIZE = 2 ** 23;
+
     public function supports(string $path): bool;
 
     /**
@@ -37,7 +39,7 @@ interface FileWriter
     /**
      * @param T $file
      */
-    public function writeChunk(object $file, string $data, int $chunkSize): void;
+    public function writeChunk(object $file, string $data, int $chunkSize = self::DEFAULT_CHUNK_SIZE): void;
 
     /**
      * @param T $file
@@ -48,4 +50,9 @@ interface FileWriter
      * @param T $file
      */
     public function finalizeWriting(object $file, string $hash): void;
+
+    /**
+     * @param T $targetFile
+     */
+    public function remove(object $targetFile): void;
 }

@@ -3,4 +3,4 @@ framework:
     default_options:
       http_version: '1.1'
       headers:
-        'User-Agent': 'RikudouSage/GogDownloader'
+        'User-Agent': '%app.user_agent%'

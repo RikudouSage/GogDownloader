@@ -13,6 +13,7 @@ You can run `gog-downloader help` or `gog-downloader help [subcommand]` for more
 - Choose which games to download based on language, os or search parameters
 - Checks that the downloaded files are valid
 - Resume partially downloaded files instead of downloading them whole again
+- Downloading save files
 - Can be easily put into cron jobs
 
 ## Usage
@@ -142,6 +143,15 @@ So to download only games that support Czech either in-game or as a separate dow
 
 - `gog-downloader update --clear --language cz` (the `--clear` is there to delete any metadata from previous `update` runs)
 - `gog-downloader download --language cz --language-fallback-english`
+
+### Downloading saves
+
+To download cloud saves you can use the `download-saves` command: `gog-downloader download-saves` (or the shorthand
+alias `saves`).
+
+This command needs either the `update` command to be run first, or to specify the `--update` flag.
+
+Check the description of the `download` command, the retry and http options are the same.
 
 ### Downloading to a S3-compatible storage
 
@@ -363,4 +373,32 @@ Options:
       --ansi|--no-ansi                                         Force (or disable --no-ansi) ANSI output
   -n, --no-interaction                                         Do not ask any interactive question
   -v|vv|vvv, --verbose                                         Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug
+```
+
+### download-saves
+
+```
+Description:
+  Download cloud saves for your games
+
+Usage:
+  download-saves [options] [--] [<directory>]
+  saves
+
+Arguments:
+  directory                        The target directory. [default: "/Downloads"]
+
+Options:
+      --no-verify                  Set this flag to disable verification of file content before downloading.
+  -u, --update                     If you specify this flag the local database will be updated before each download and you don't need to update it separately
+      --retry=RETRY                How many times should the download be retried in case of failure. [default: 3]
+      --retry-delay=RETRY-DELAY    The delay in seconds between each retry. [default: 1]
+      --skip-errors                Skip saves that for whatever reason couldn't be downloaded
+      --idle-timeout=IDLE-TIMEOUT  Set the idle timeout in seconds for http requests [default: 3]
+  -h, --help                       Display help for the given command. When no command is given display help for the list command
+  -q, --quiet                      Do not output any message
+  -V, --version                    Display this application version
+      --ansi|--no-ansi             Force (or disable --no-ansi) ANSI output
+  -n, --no-interaction             Do not ask any interactive question
+  -v|vv|vvv, --verbose             Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug
 ```

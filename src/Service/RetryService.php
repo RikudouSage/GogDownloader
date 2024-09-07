@@ -19,6 +19,7 @@ final readonly class RetryService
     public function retry(callable $callable, int $maxRetries, int $retryDelay, ?array $exceptions = null): void
     {
         $retries = 0;
+        $thrown = [];
         do {
             try {
                 $callable();
@@ -26,7 +27,7 @@ final readonly class RetryService
                 return;
             } catch (Throwable $e) {
                 if ($this->debug) {
-                    throw $e;
+                    $thrown[] = $e;
                 }
                 ++$retries;
                 if (!$this->matches($e, $exceptions)) {
@@ -35,6 +36,10 @@ final readonly class RetryService
                 sleep($retryDelay);
             }
         } while ($retries < $maxRetries);
+
+        if ($this->debug && count($thrown)) {
+            throw $thrown[array_key_last($thrown)];
+        }
 
         throw new TooManyRetriesException('The operation has been retried too many times, cancelling');
     }

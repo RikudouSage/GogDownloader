@@ -27,4 +27,8 @@ interface PersistenceManager
     public function storeSetting(Setting $setting, int|string|float|bool|null $value): void;
 
     public function getSetting(Setting $setting): int|string|float|bool|null;
+
+    public function storeUncompressedHash(string $compressedHash, string $uncompressedHash): void;
+
+    public function getCompressedHash(string $uncompressedHash): ?string;
 }
