@@ -20,7 +20,7 @@ final class ConfigCommand extends Command
         parent::__construct();
     }
 
-    protected function configure()
+    protected function configure(): void
     {
         $possibleSettings = array_map(fn (Setting $setting) => $setting->value, Setting::cases());
         $this

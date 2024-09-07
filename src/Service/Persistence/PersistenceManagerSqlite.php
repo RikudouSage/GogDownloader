@@ -127,8 +127,11 @@ final class PersistenceManagerSqlite extends AbstractPersistenceManager
         $settingName = $setting->value;
         $prepared = $pdo->prepare('select value from settings where setting = ?');
         $prepared->bindParam(1, $settingName);
+        $prepared->execute();
 
-        return $prepared->fetch()['value'] ?? null;
+        $result = $prepared->fetch(PDO::FETCH_ASSOC);
+
+        return isset($result['value']) ? json_decode($result['value']) : null;
     }
 
     public function storeUncompressedHash(string $compressedHash, string $uncompressedHash): void
