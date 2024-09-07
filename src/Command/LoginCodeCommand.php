@@ -22,9 +22,9 @@ final class LoginCodeCommand extends Command
         parent::__construct();
     }
 
-    protected function configure()
+    protected function configure(): void
     {
-        return $this
+        $this
             ->setDescription('Login using a code (for example when two-factor auth or recaptcha is required)')
             ->addArgument(
                 'code',
@@ -34,18 +34,18 @@ final class LoginCodeCommand extends Command
         ;
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
 
         $io->writeln([
             '',
             sprintf('Visit %s and log in.', WebAuthentication::AUTH_URL),
-            "After you're logged in you should be redirected to a blank page, copy the address of the page and paste it here (the prompt is invisible, you won't see that you pasted anything).",
+            "After you're logged in you should be redirected to a blank page, copy the address of the page and paste it here.",
         ]);
 
         if (!$code = $input->getArgument('code')) {
-            $code = $io->askHidden('Code or web address', validator: new NonEmptyValidator());
+            $code = $io->ask('Code or web address', validator: new NonEmptyValidator());
         }
         $code = $this->getCode($code);
         $this->authenticationManager->codeLogin($code);
