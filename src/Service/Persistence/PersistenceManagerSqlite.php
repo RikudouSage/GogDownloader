@@ -117,7 +117,7 @@ final class PersistenceManagerSqlite extends AbstractPersistenceManager
                    VALUES (?, ?, ?)
                    ON CONFLICT DO UPDATE SET title   = excluded.title,
                                              cd_key  = excluded.cd_key,
-                                             game_id = excluded.cd_key
+                                             game_id = excluded.game_id
                    '
         )->execute([
             $detail->title,
