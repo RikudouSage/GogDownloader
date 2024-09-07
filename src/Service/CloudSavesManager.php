@@ -16,11 +16,11 @@ final readonly class CloudSavesManager
     private const BASE_URL = 'https://cloudstorage.gog.com/v1';
 
     public function __construct(
-        private AuthenticationManager  $authenticationManager,
-        private HttpClientInterface    $httpClient,
-        private GameMetadataManager    $gameMetadataManager,
-        private string                 $userAgent,
-        private Serializer             $serializer,
+        private AuthenticationManager $authenticationManager,
+        private HttpClientInterface $httpClient,
+        private GameMetadataManager $gameMetadataManager,
+        private string $userAgent,
+        private Serializer $serializer,
         private CacheItemPoolInterface $cache,
     ) {
     }
@@ -60,7 +60,7 @@ final readonly class CloudSavesManager
         $oauth = $this->gameMetadataManager->getGameOAuthCredentials($game);
         $credentials = $this->gameMetadataManager->getGameAccessKey($game);
         $url = sprintf(
-            "%s/%s/%s",
+            '%s/%s/%s',
             self::BASE_URL,
             $this->authenticationManager->getUserInfo()->galaxyUserId,
             $oauth->clientId,
@@ -92,7 +92,7 @@ final readonly class CloudSavesManager
         $oauth = $this->gameMetadataManager->getGameOAuthCredentials($game);
         $credentials = $this->gameMetadataManager->getGameAccessKey($game);
         $url = sprintf(
-            "%s/%s/%s/%s",
+            '%s/%s/%s/%s',
             self::BASE_URL,
             $this->authenticationManager->getUserInfo()->galaxyUserId,
             $oauth->clientId,

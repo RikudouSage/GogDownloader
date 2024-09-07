@@ -12,8 +12,10 @@ use App\DTO\Url;
 use App\Enum\MediaType;
 use App\Exception\AuthorizationException;
 use App\Service\Persistence\PersistenceManager;
+use DateInterval;
 use Exception;
 use JsonException;
+use Psr\Cache\CacheItemPoolInterface;
 use ReflectionException;
 use ReflectionProperty;
 use SimpleXMLElement;
@@ -35,6 +37,7 @@ final class OwnedItemsManager
         private readonly AuthenticationManager $authorization,
         private readonly Serializer $serializer,
         private readonly PersistenceManager $persistence,
+        private readonly CacheItemPoolInterface $cache,
     ) {
     }
 
@@ -111,12 +114,41 @@ final class OwnedItemsManager
         } while ($query['page'] <= $data['totalPages']);
     }
 
-    public function getItemDetail(OwnedItemInfo $item, int $httpTimeout = 3)
+    public function getGameInfoByTitle(string $title): ?GameInfo
     {
-        return match ($item->getType()) {
+        foreach ($this->getLocalGameData() as $gameDetail) {
+            if ($gameDetail->title === $title) {
+                return $this->serializer->deserialize([
+                    'id' => $gameDetail->id,
+                    'title' => $gameDetail->title,
+                    'updates' => false,
+                    'isNew' => false,
+                ], GameInfo::class);
+            }
+        }
+
+        return null;
+    }
+
+    public function getItemDetail(OwnedItemInfo $item, int $httpTimeout = 3, bool $cached = true)
+    {
+        $cacheItem = $cached ? $this->cache->getItem("game_detail.{$item->getType()->value}.{$item->getId()}") : null;
+        if ($cacheItem?->isHit()) {
+            return $cacheItem->get();
+        }
+
+        $detail = match ($item->getType()) {
             MediaType::Game => $this->getGameDetail($item, $httpTimeout),
             MediaType::Movie => $this->getMovieDetail($item, $httpTimeout),
         };
+
+        $cacheItem?->set($detail);
+        $cacheItem?->expiresAfter(new DateInterval('PT20M'));
+        if ($cacheItem) {
+            $this->cache->save($cacheItem);
+        }
+
+        return $detail;
     }
 
     /**

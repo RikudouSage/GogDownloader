@@ -161,7 +161,7 @@ final class UpdateDatabaseCommand extends Command
                         }
                         $progressBar->setMessage($item->getTitle());
                         $this->ownedItemsManager->storeSingleGameData(
-                            $this->ownedItemsManager->getItemDetail($item),
+                            $this->ownedItemsManager->getItemDetail($item, cached: false),
                         );
                         $progressBar->advance();
                     }, $input->getOption('retry'), $input->getOption('retry-delay'));

@@ -34,6 +34,7 @@ interface FileWriter
      * @param T $file
      */
     public function getMd5Hash(object $file): string;
+
     public function createDirectory(string $path): void;
 
     /**

@@ -25,9 +25,9 @@ final readonly class AuthenticationManager
     private const AUTH_URL = 'https://auth.gog.com';
 
     public function __construct(
-        private PersistenceManager  $persistence,
+        private PersistenceManager $persistence,
         private HttpClientInterface $httpClient,
-        private string              $clientId,
+        private string $clientId,
     ) {
     }
 

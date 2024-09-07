@@ -150,7 +150,7 @@ final class PersistenceManagerSqlite extends AbstractPersistenceManager
         $pdo = $this->getPdo(self::DATABASE);
         $this->migrationManager->apply($pdo);
 
-        $query = $pdo->prepare("select compressed from compressed_file_hashes where uncompressed = ?");
+        $query = $pdo->prepare('select compressed from compressed_file_hashes where uncompressed = ?');
         $query->bindParam(1, $uncompressedHash);
         $query->execute();
 

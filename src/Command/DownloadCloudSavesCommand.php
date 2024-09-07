@@ -29,12 +29,12 @@ final class DownloadCloudSavesCommand extends Command
     use TargetDirectoryTrait;
 
     public function __construct(
-        private readonly CloudSavesManager  $cloudSaves,
+        private readonly CloudSavesManager $cloudSaves,
         private readonly PersistenceManager $persistence,
-        private readonly OwnedItemsManager  $ownedItemsManager,
-        private readonly Iterables          $iterables,
-        private readonly RetryService       $retryService,
-        private readonly FileWriterLocator  $writerLocator,
+        private readonly OwnedItemsManager $ownedItemsManager,
+        private readonly Iterables $iterables,
+        private readonly RetryService $retryService,
+        private readonly FileWriterLocator $writerLocator,
         private readonly HttpClientInterface $httpClient,
     ) {
         parent::__construct();
@@ -123,6 +123,7 @@ final class DownloadCloudSavesCommand extends Command
             if (!$this->cloudSaves->supports($game)) {
                 continue;
             }
+
             try {
                 $this->retryService->retry(function () use ($noVerify, $input, $io, $game) {
                     $progress = $io->createProgressBar();
@@ -136,6 +137,7 @@ final class DownloadCloudSavesCommand extends Command
                         if ($io->isVerbose()) {
                             $io->writeln("[{$game->title}] Skipping, because no save files were found");
                         }
+
                         return;
                     }
 
@@ -160,7 +162,7 @@ final class DownloadCloudSavesCommand extends Command
 
                             if ($calculatedMd5 === $save->hash) {
                                 if ($io->isVerbose()) {
-                                    $io->writeln("[{$game->title}] ({$save->name}): Skipping because it exists and is valid",);
+                                    $io->writeln("[{$game->title}] ({$save->name}): Skipping because it exists and is valid", );
                                 }
                                 $progress->advance();
                                 continue;
@@ -201,6 +203,7 @@ final class DownloadCloudSavesCommand extends Command
         }
 
         $io->success('All configured save files have been downloaded.');
+
         return Command::SUCCESS;
     }
 }
