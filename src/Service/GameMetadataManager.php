@@ -59,6 +59,7 @@ final readonly class GameMetadataManager
             Request::METHOD_GET,
             $builds[0]->link,
         )->getContent();
+
         try {
             $result = json_decode($response, true, flags: JSON_THROW_ON_ERROR);
         } catch (JsonException) {

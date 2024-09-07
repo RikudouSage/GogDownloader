@@ -8,21 +8,37 @@ final class S3FileReference
 {
     private const DEFAULT_CHUNK_SIZE = 10 * 1024 * 1024;
 
+    public readonly string $tempKey;
+
     private int $partNumber = 0;
+
     private ?string $openedObjectId = null;
+
     private ?S3Client $client = null;
+
     /** @var array<array{PartNumber: int, ETag: string}> */
     private array $parts = [];
-    private string $buffer = '';
-    private int $chunkSize = 0;
 
-    public readonly string $tempKey;
+    private string $buffer = '';
+
+    private int $chunkSize = 0;
 
     public function __construct(
         public readonly string $bucket,
         public readonly string $key,
     ) {
         $this->tempKey = $this->key . '.gog-downloader.tmp';
+    }
+
+    public function __destruct()
+    {
+        if ($this->client !== null && $this->openedObjectId !== null) {
+            $this->client->abortMultipartUpload([
+                'Bucket' => $this->bucket,
+                'Key' => $this->tempKey,
+                'UploadId' => $this->openedObjectId,
+            ]);
+        }
     }
 
     public function open(S3Client $client): void
@@ -43,6 +59,7 @@ final class S3FileReference
 
         if (strlen($this->buffer . $data) < $chunkSize && !$forceWrite) {
             $this->buffer .= $data;
+
             return;
         }
         $data = $this->buffer . $data;
@@ -96,17 +113,6 @@ final class S3FileReference
             $this->client->deleteObject([
                 'Bucket' => $this->bucket,
                 'Key' => $this->tempKey,
-            ]);
-        }
-    }
-
-    public function __destruct()
-    {
-        if ($this->client !== null && $this->openedObjectId !== null) {
-            $this->client->abortMultipartUpload([
-                'Bucket' => $this->bucket,
-                'Key' => $this->tempKey,
-                'UploadId' => $this->openedObjectId,
             ]);
         }
     }

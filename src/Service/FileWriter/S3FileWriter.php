@@ -96,14 +96,6 @@ final readonly class S3FileWriter implements FileWriter
         return $hash;
     }
 
-    private function extractPath(string $path): ExtractedS3Path
-    {
-        $path = substr($path, strlen('s3://'));
-        $parts = explode('/', $path, 2);
-
-        return new ExtractedS3Path($parts[0], $parts[1]);
-    }
-
     public function finalizeWriting(object $file, string $hash): void
     {
         $file->finalize($hash);
@@ -119,5 +111,13 @@ final readonly class S3FileWriter implements FileWriter
             'Bucket' => $targetFile->bucket,
             'Key' => $targetFile->tempKey,
         ]);
+    }
+
+    private function extractPath(string $path): ExtractedS3Path
+    {
+        $path = substr($path, strlen('s3://'));
+        $parts = explode('/', $path, 2);
+
+        return new ExtractedS3Path($parts[0], $parts[1]);
     }
 }

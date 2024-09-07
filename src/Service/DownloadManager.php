@@ -17,12 +17,16 @@ final class DownloadManager
     ) {
     }
 
+    public function getDownloadUrl(DownloadDescription $download): string
+    {
+        return self::BASE_URL . $download->url;
+    }
+
     public function getFilename(DownloadDescription $download, int $httpTimeout = 3): string
     {
-        $url = self::BASE_URL . $download->url;
         $response = $this->httpClient->request(
             Request::METHOD_GET,
-            $url,
+            $this->getDownloadUrl($download),
             [
                 'auth_bearer' => (string) $this->authentication->getAuthorization(),
                 'max_redirects' => 0,
@@ -42,7 +46,7 @@ final class DownloadManager
     ): ResponseStreamInterface {
         $response = $this->httpClient->request(
             Request::METHOD_GET,
-            self::BASE_URL . $download->url,
+            $this->getDownloadUrl($download),
             [
                 'auth_bearer' => (string) $this->authentication->getAuthorization(),
                 'max_redirects' => 0,

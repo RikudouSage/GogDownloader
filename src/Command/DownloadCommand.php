@@ -34,6 +34,7 @@ final class DownloadCommand extends Command
     use TargetDirectoryTrait;
 
     private bool $canKillSafely = true;
+
     private bool $exitRequested = false;
 
     public function __construct(
@@ -141,6 +142,7 @@ final class DownloadCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
+
         try {
             $this->handleSignals($io);
 
@@ -152,7 +154,7 @@ final class DownloadCommand extends Command
             $timeout = $input->getOption('idle-timeout');
             $chunkSize = $input->getOption('chunk-size') * 1024 * 1024;
             if ($chunkSize < 5 * 1024 * 1024) {
-                $io->error("The chunk size cannot be lower than 5 MB.");
+                $io->error('The chunk size cannot be lower than 5 MB.');
 
                 return self::FAILURE;
             }
@@ -327,7 +329,8 @@ final class DownloadCommand extends Command
             return self::SUCCESS;
         } catch (ExitException $e) {
             $io->error($e->getMessage());
-            return self::FAILURE;
+
+            return $e->getCode();
         }
     }
 
@@ -369,14 +372,14 @@ final class DownloadCommand extends Command
         pcntl_signal(SIGINT, function (int $signal, mixed $signalInfo) use ($output) {
             if ($this->canKillSafely || $this->exitRequested) {
                 if (!$this->canKillSafely) {
-                    throw new ExitException("Application termination has been requested twice, forcing killing");
+                    throw new ExitException('Application termination has been requested twice, forcing killing');
                 }
-                throw new ExitException("Application has been terminated");
+                throw new ExitException('Application has been terminated');
             }
 
             $this->exitRequested = true;
             $output->writeln('');
-            $output->writeln("Application exit has been requested, the application will stop once the current download finishes. Press CTRL+C again to force exit.");
+            $output->writeln('Application exit has been requested, the application will stop once the current download finishes. Press CTRL+C again to force exit.');
         });
     }
 
@@ -386,7 +389,7 @@ final class DownloadCommand extends Command
             pcntl_signal_dispatch();
         }
         if ($this->exitRequested) {
-            throw new ExitException("Application has been terminated as requested previously.");
+            throw new ExitException('Application has been terminated as requested previously.');
         }
     }
 }
