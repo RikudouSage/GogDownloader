@@ -47,7 +47,7 @@ Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 
 [Run]
 Filename: "{tmp}\VC_redist.x64.exe"; StatusMsg: "{cm:InstallingVC2017redist}"; Parameters: "/quiet"; Check: VS17RedistNeedsInstall; Flags: waituntilterminated
-Filename: "cmd.exe"; Description: "{cm:OpenCmd}"; Parameters: "/K ""cd %USERPROFILE% && echo Run the gog-downloader command to view usage instructions or to start using it. Note that if you get an error about the command not being recognized, you might need to reboot your PC."""; Flags: nowait postinstall skipifsilent
+Filename: "cmd.exe"; Description: "{cm:OpenCmd}"; Parameters: "/K ""cd %USERPROFILE% && set ""Path=%Path%;{app}\bin"" && echo Run the gog-downloader command to view usage instructions or to start using it. Note that if you get an error about the command not being recognized, you might need to reboot your PC."""; Flags: nowait postinstall skipifsilent
 
 [CustomMessages]
 english.DownloadPhpPageTitle=Downloading runtime
