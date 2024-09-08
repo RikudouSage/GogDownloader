@@ -100,7 +100,8 @@ jobs:
       - name: Set version
         env:
           VERSION: ${{ steps.extract_name.outputs.result }}
-        run: echo $VERSION > bin/appversion
+        run: echo %VERSION% > bin\appversion
+        shell: cmd
       - name: Create Windows setup
         run: iscc setup.iss
       - name: Create artifact
