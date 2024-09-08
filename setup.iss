@@ -1,5 +1,17 @@
+#define FileHandle
+#define FileLine
+#if FileExists("bin/appversion")
+  #if FileHandle = FileOpen("bin/appversion")
+    #define MyAppVersion = Trim(FileRead(FileHandle))
+    #expr FileClose(FileHandle)
+  #endif
+#endif
+
+#ifndef MyAppVersion
+  #define MyAppVersion "dev-version"
+#endif
+
 #define MyAppName "GOG Downloader"
-#define MyAppVersion "1.6.2"
 #define MyAppPublisher "RikudouSage"
 #define MyAppURL "https://github.com/RikudouSage/GogDownloader"
 #define MyAppExeName "GogDownloader.exe"
