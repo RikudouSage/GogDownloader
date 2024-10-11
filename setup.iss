@@ -16,7 +16,8 @@
 #define MyAppURL "https://github.com/RikudouSage/GogDownloader"
 #define MyAppExeName "GogDownloader.exe"
 #define PhpLink "https://windows.php.net/downloads/releases/php-8.3.12-nts-Win32-vs16-x64.zip"
-#define PhpSha "2e302fd376a67cfb43dfd6c8fec1ccd503604cee2717fddc4098fedfb778ddb9"
+#define PhpLinkFallback "https://files.catbox.moe/mzsohg.zip"
+#define PhpSha "4214c13f1c66a7b98f088d8d26b18e35117228b853ba4394479d2d3df693c3b3"
 #define VcRedistLink "https://aka.ms/vs/17/release/vc_redist.x64.exe"
 
 [Setup]
@@ -247,7 +248,17 @@ begin
   except
     DownloadSuccess := False;
   end;
-  
+
+  if not DownloadSuccess then
+  begin
+      try
+        DownloadTemporaryFile('{#PhpLinkFallback}', 'php.zip', '{#PhpSha}', nil);
+        DownloadSuccess := True;
+      except
+        DownloadSuccess := False;
+      end;
+  end;
+
   if not DownloadSuccess then
   begin
     MsgBox(ExpandConstant('{cm:DownloadPhpFailed}'), mbError, MB_OK);
