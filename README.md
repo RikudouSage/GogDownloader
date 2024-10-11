@@ -5,7 +5,7 @@
 
 PHP based tool to download the games you have bought on GOG to your hard drive.
 
-Requires `php 8.2+` (with simplexml and json) or `docker`. On Windows you can use an installer that install all the necessary dependencies.
+Requires `php 8.2+` (with simplexml and json) or `docker`. On Windows you can use an installer that installs all the necessary dependencies.
 
 By default, the games are saved in the directory you run the commands from, you can also specify your own.
 
