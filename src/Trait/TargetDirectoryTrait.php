@@ -22,6 +22,7 @@ trait TargetDirectoryTrait
 
         $title = preg_replace('@[^a-zA-Z-_0-9.]@', '_', $game->title);
         $title = preg_replace('@_{2,}@', '_', $title);
+        $title = trim($title, '.');
 
         $dir = "{$dir}/{$title}";
         if ($subdirectory !== null) {
