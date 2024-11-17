@@ -15,7 +15,7 @@
 #define MyAppPublisher "RikudouSage"
 #define MyAppURL "https://github.com/RikudouSage/GogDownloader"
 #define MyAppExeName "GogDownloader.exe"
-#define PhpLink "https://windows.php.net/downloads/releases/php-8.3.12-nts-Win32-vs16-x64.zip"
+#define PhpLink "https://windows.php.net/downloads/releases/php-8.3.13-nts-Win32-vs16-x64.zip"
 #define PhpLinkFallback "https://files.catbox.moe/mzsohg.zip"
 #define PhpSha "4214c13f1c66a7b98f088d8d26b18e35117228b853ba4394479d2d3df693c3b3"
 #define VcRedistLink "https://aka.ms/vs/17/release/vc_redist.x64.exe"
