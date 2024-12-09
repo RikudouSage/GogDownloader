@@ -136,6 +136,16 @@ final class DownloadCommand extends Command
                 description: 'The chunk size in MB. Some file providers support sending parts of a file, this options sets the size of a single part. Cannot be lower than 5',
                 default: 10,
             )
+            ->addOption(
+                name: 'only',
+                mode: InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                description: 'Only games specified using this flag will be downloaded. The flag can be specified multiple times. Case insensitive, exact match.',
+            )
+            ->addOption(
+                name: 'without',
+                mode: InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                description: "Don't download the games listed using this flag. The flag can be specified multiple times. Case insensitive, exact match.",
+            )
         ;
     }
 
@@ -153,6 +163,9 @@ final class DownloadCommand extends Command
             $excludeLanguage = Language::tryFrom($input->getOption('exclude-game-with-language') ?? '');
             $timeout = $input->getOption('idle-timeout');
             $chunkSize = $input->getOption('chunk-size') * 1024 * 1024;
+            $only = $input->getOption('only');
+            $without = $input->getOption('without');
+
             if ($chunkSize < 5 * 1024 * 1024) {
                 $io->error('The chunk size cannot be lower than 5 MB.');
 
@@ -185,6 +198,21 @@ final class DownloadCommand extends Command
                     },
                 )
                 : $this->ownedItemsManager->getLocalGameData();
+
+            if ($only) {
+                $iterable = $this->iterables->filter($iterable, fn (GameDetail $detail) => in_array(
+                    strtolower($detail->title),
+                    array_map(fn (string $title) => strtolower($title), $only),
+                    true,
+                ));
+            }
+            if ($without) {
+                $iterable = $this->iterables->filter($iterable, fn (GameDetail $detail) => !in_array(
+                    strtolower($detail->title),
+                    array_map(fn (string $title) => strtolower($title), $without),
+                    true,
+                ));
+            }
 
             $this->dispatchSignals();
             foreach ($iterable as $game) {

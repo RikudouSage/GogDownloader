@@ -119,13 +119,18 @@ For downloading you use the `download` command: `gog-downloader download`.
 > This may be solved by increasing the --idle-timeout parameter.
 
 You can filter by language and operating system. You can also fall back to English if the game doesn't support the
-language you specified. You can also specify the target directory
+language you specified. You can also specify the target directory. Additionally, you can download only games you specify
+or ignore games you don't want to download.
 
 - `gog-downloader download --os windows` - download only Windows files
 - `gog-downloader download --language en` - download only English files
 - `gog-downloader download --language cz --language-fallback-english` - download only Czech files, if the game doesn't
   support Czech, English files will be downloaded instead
 - `gog-downloader download TargetDownloadsDirectory` - downloads the files into `TargetDownloadsDirectory` directory
+- `gog-downloader download --only "overcooked! 2" --only "Overcooked: Gourmet Edition` - only downloads the 2 games listed.
+  The filter is case-insensitive and needs to match the game name exactly as it's visible on GOG.
+- `gog-downloader download --without "cyberpunk 2077"` - downloads all games except Cyberpunk 2077. Same rules
+  as for the `--only` filter apply.
 
 The arguments can of course be combined: `gog-downloader download --os windows --language en TargetDownloadsDirectory`.
 
