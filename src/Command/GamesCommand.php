@@ -41,8 +41,16 @@ final class GamesCommand extends Command
 
         try {
             $gameName = $input->getArgument('name') ?? $this->selectGame($input, $io);
-            if (!$input->getArgument('name')) {
+            if (!$input->getArgument('name') && $input->isInteractive()) {
                 $io->note("Tip: Next time you can add \"{$gameName}\" directly as an argument to this command.");
+            }
+
+            if (!$input->isInteractive() && !$gameName) {
+                $io->writeln(array_map(
+                    fn (GameDetail $detail) => $detail->title,
+                    $this->ownedItemsManager->getLocalGameData(),
+                ));
+                return Command::SUCCESS;
             }
 
             $info = $this->ownedItemsManager->getGameInfoByTitle($gameName);
@@ -87,7 +95,7 @@ final class GamesCommand extends Command
         }
     }
 
-    private function selectGame(InputInterface $input, SymfonyStyle $io): string
+    private function selectGame(InputInterface $input, SymfonyStyle $io): ?string
     {
         $items = $this->ownedItemsManager->getLocalGameData();
         if (!count($items)) {
