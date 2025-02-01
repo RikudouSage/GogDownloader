@@ -142,6 +142,7 @@ final class UpdateDatabaseCommand extends Command
 
             return Command::FAILURE;
         }
+
         try {
             $operatingSystems = array_map(
                 fn (string $operatingSystem) => OperatingSystem::from($operatingSystem),
