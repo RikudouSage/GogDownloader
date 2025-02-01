@@ -9,6 +9,7 @@ use App\DTO\MovieInfo;
 use App\DTO\OwnedItemInfo;
 use App\DTO\SearchFilter;
 use App\DTO\Url;
+use App\Enum\Language;
 use App\Enum\MediaType;
 use App\Exception\AuthorizationException;
 use App\Service\Persistence\PersistenceManager;
@@ -68,8 +69,11 @@ final class OwnedItemsManager
             'sortBy' => 'title',
             'hiddenFlag' => 0,
         ];
-        if ($filter->language !== null) {
-            $query['language'] = $filter->language->value;
+        if ($filter->languages !== null) {
+            $query['language'] = implode(',', array_map(
+                fn (Language $language): string => $language->value,
+                $filter->languages,
+            ));
         }
         if ($filter->operatingSystem !== null) {
             $query['system'] = $filter->operatingSystem->getAsNumbers();

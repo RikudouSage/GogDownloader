@@ -50,6 +50,7 @@ final class GamesCommand extends Command
                     fn (GameDetail $detail) => $detail->title,
                     $this->ownedItemsManager->getLocalGameData(),
                 ));
+
                 return Command::SUCCESS;
             }
 

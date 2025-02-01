@@ -27,6 +27,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use ValueError;
 
 #[AsCommand('download')]
 final class DownloadCommand extends Command
@@ -82,7 +83,7 @@ final class DownloadCommand extends Command
             ->addOption(
                 'language',
                 'l',
-                InputOption::VALUE_REQUIRED,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
                 'Download only games for specified language. See command "languages" for list of them.',
             )
             ->addOption(
@@ -158,7 +159,25 @@ final class DownloadCommand extends Command
 
             $noVerify = $input->getOption('no-verify');
             $operatingSystem = OperatingSystem::tryFrom($input->getOption('os') ?? '');
-            $language = Language::tryFrom($input->getOption('language') ?? '');
+
+            try {
+                $languages = array_map(
+                    fn (string $langCode) => Language::from($langCode),
+                    $input->getOption('language'),
+                );
+            } catch (ValueError $e) {
+                $regex = /** @lang RegExp */ '@^"([^"]+)" is not a valid@';
+                if (!preg_match($regex, $e->getMessage(), $matches)) {
+                    $io->error('Some of the languages you provided are not valid');
+
+                    return Command::FAILURE;
+                }
+
+                $io->error("The language '{$matches[1]}' is not a supported language'");
+
+                return Command::FAILURE;
+            }
+
             $englishFallback = $input->getOption('language-fallback-english');
             $excludeLanguage = Language::tryFrom($input->getOption('exclude-game-with-language') ?? '');
             $timeout = $input->getOption('idle-timeout');
@@ -173,7 +192,7 @@ final class DownloadCommand extends Command
             }
             $this->dispatchSignals();
 
-            if ($language !== null && $language !== Language::English && !$englishFallback) {
+            if ($languages && !in_array(Language::English, $languages, true) && !$englishFallback) {
                 $io->warning("GOG often has multiple language versions inside the English one. Those game files will be skipped. Specify --language-fallback-english to include English versions if your language's version doesn't exist.");
             }
 
@@ -183,7 +202,7 @@ final class DownloadCommand extends Command
 
             $filter = new SearchFilter(
                 operatingSystem: $operatingSystem,
-                language: $language,
+                languages: $languages,
             );
 
             $iterable = $input->getOption('update')
@@ -218,10 +237,13 @@ final class DownloadCommand extends Command
             foreach ($iterable as $game) {
                 $downloads = $game->downloads;
 
-                if ($englishFallback && $language) {
+                if ($englishFallback && $languages) {
                     $downloads = array_filter(
                         $game->downloads,
-                        fn (DownloadDescription $download) => $download->language === $language->getLocalName()
+                        fn (DownloadDescription $download) => in_array($download->language, array_map(
+                            fn (Language $language) => $language->getLocalName(),
+                            $languages,
+                        ), true),
                     );
                     if (!count($downloads)) {
                         $downloads = array_filter(
@@ -247,7 +269,7 @@ final class DownloadCommand extends Command
                             $game,
                             $input,
                             $englishFallback,
-                            $language,
+                            $languages,
                             $output,
                             $download,
                             $operatingSystem,
@@ -278,8 +300,11 @@ final class DownloadCommand extends Command
                             }
 
                             if (
-                                $language !== null
-                                && $download->language !== $language->getLocalName()
+                                $languages
+                                && !in_array($download->language, array_map(
+                                    fn (Language $language) => $language->getLocalName(),
+                                    $languages,
+                                ), true)
                                 && (!$englishFallback || $download->language !== Language::English->getLocalName())
                             ) {
                                 if ($output->isVerbose()) {
