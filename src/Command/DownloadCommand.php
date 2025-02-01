@@ -18,6 +18,7 @@ use App\Service\Iterables;
 use App\Service\OwnedItemsManager;
 use App\Service\Persistence\PersistenceManager;
 use App\Service\RetryService;
+use App\Trait\EnumExceptionParserTrait;
 use App\Trait\TargetDirectoryTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -33,6 +34,7 @@ use ValueError;
 final class DownloadCommand extends Command
 {
     use TargetDirectoryTrait;
+    use EnumExceptionParserTrait;
 
     private bool $canKillSafely = true;
 
@@ -71,7 +73,7 @@ final class DownloadCommand extends Command
             ->addOption(
                 'os',
                 'o',
-                InputOption::VALUE_REQUIRED,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
                 'Download only games for specified operating system, allowed values: ' . implode(
                     ', ',
                     array_map(
@@ -158,7 +160,22 @@ final class DownloadCommand extends Command
             $this->handleSignals($io);
 
             $noVerify = $input->getOption('no-verify');
-            $operatingSystem = OperatingSystem::tryFrom($input->getOption('os') ?? '');
+
+            try {
+                $operatingSystems = array_map(
+                    fn (string $operatingSystem) => OperatingSystem::from($operatingSystem),
+                    $input->getOption('os'),
+                );
+            } catch (ValueError $e) {
+                $invalid = $this->getInvalidOption($e);
+                $io->error(
+                    $invalid
+                        ? 'Some of the operating systems you provided are not valid'
+                        : "The operating system '{$invalid}' is not a valid operating system"
+                );
+
+                return Command::FAILURE;
+            }
 
             try {
                 $languages = array_map(
@@ -166,14 +183,12 @@ final class DownloadCommand extends Command
                     $input->getOption('language'),
                 );
             } catch (ValueError $e) {
-                $regex = /** @lang RegExp */ '@^"([^"]+)" is not a valid@';
-                if (!preg_match($regex, $e->getMessage(), $matches)) {
-                    $io->error('Some of the languages you provided are not valid');
-
-                    return Command::FAILURE;
-                }
-
-                $io->error("The language '{$matches[1]}' is not a supported language'");
+                $invalid = $this->getInvalidOption($e);
+                $io->error(
+                    $invalid
+                        ? 'Some of the languages you provided are not valid'
+                        : "The language '{$invalid}' is not a supported language'"
+                );
 
                 return Command::FAILURE;
             }
@@ -201,7 +216,7 @@ final class DownloadCommand extends Command
             }
 
             $filter = new SearchFilter(
-                operatingSystem: $operatingSystem,
+                operatingSystems: $operatingSystems,
                 languages: $languages,
             );
 
@@ -272,7 +287,7 @@ final class DownloadCommand extends Command
                             $languages,
                             $output,
                             $download,
-                            $operatingSystem,
+                            $operatingSystems,
                             $io,
                         ) {
                             $this->canKillSafely = false;
@@ -291,7 +306,13 @@ final class DownloadCommand extends Command
                             $format = ' %bytes_current% / %bytes_total% [%bar%] %percent:3s%% - %message%';
                             $progress->setFormat($format);
 
-                            if ($operatingSystem !== null && $download->platform !== $operatingSystem->value) {
+                            if (
+                                $operatingSystems
+                                && !in_array($download->platform, array_map(
+                                    fn (OperatingSystem $operatingSystem) => $operatingSystem->value,
+                                    $operatingSystems,
+                                ), true)
+                            ) {
                                 if ($output->isVerbose()) {
                                     $io->writeln("{$download->name} ({$download->platform}, {$download->language}): Skipping because of OS filter");
                                 }

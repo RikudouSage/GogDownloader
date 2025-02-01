@@ -11,6 +11,7 @@ use App\DTO\SearchFilter;
 use App\DTO\Url;
 use App\Enum\Language;
 use App\Enum\MediaType;
+use App\Enum\OperatingSystem;
 use App\Exception\AuthorizationException;
 use App\Service\Persistence\PersistenceManager;
 use DateInterval;
@@ -75,8 +76,11 @@ final class OwnedItemsManager
                 $filter->languages,
             ));
         }
-        if ($filter->operatingSystem !== null) {
-            $query['system'] = $filter->operatingSystem->getAsNumbers();
+        if ($filter->operatingSystems !== null) {
+            $query['system'] = implode(',', array_map(
+                fn (OperatingSystem $operatingSystem): string => $operatingSystem->getAsNumbers(),
+                $filter->operatingSystems,
+            ));
         }
         if ($filter->search !== null) {
             $query['search'] = $filter->search;

@@ -11,6 +11,7 @@ use App\Enum\OperatingSystem;
 use App\Exception\TooManyRetriesException;
 use App\Service\OwnedItemsManager;
 use App\Service\RetryService;
+use App\Trait\EnumExceptionParserTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -22,6 +23,8 @@ use ValueError;
 #[AsCommand('update-database')]
 final class UpdateDatabaseCommand extends Command
 {
+    use EnumExceptionParserTrait;
+
     public function __construct(
         private readonly OwnedItemsManager $ownedItemsManager,
         private readonly RetryService $retryService,
@@ -60,7 +63,7 @@ final class UpdateDatabaseCommand extends Command
             ->addOption(
                 'os',
                 'o',
-                InputOption::VALUE_REQUIRED,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
                 'Filter by OS, allowed values are: ' . implode(
                     ', ',
                     array_map(
@@ -130,20 +133,34 @@ final class UpdateDatabaseCommand extends Command
                 $input->getOption('language'),
             );
         } catch (ValueError $e) {
-            $regex = /** @lang RegExp */ '@^"([^"]+)" is not a valid@';
-            if (!preg_match($regex, $e->getMessage(), $matches)) {
-                $io->error('Some of the languages you provided are not valid');
+            $invalid = $this->getInvalidOption($e);
+            $io->error(
+                $invalid
+                    ? 'Some of the languages you provided are not valid'
+                    : "The language '{$invalid}' is not a supported language'"
+            );
 
-                return Command::FAILURE;
-            }
+            return Command::FAILURE;
+        }
 
-            $io->error("The language '{$matches[1]}' is not a supported language'");
+        try {
+            $operatingSystems = array_map(
+                fn (string $operatingSystem) => OperatingSystem::from($operatingSystem),
+                $input->getOption('os'),
+            );
+        } catch (ValueError $e) {
+            $invalid = $this->getInvalidOption($e);
+            $io->error(
+                $invalid
+                    ? 'Some of the operating systems you provided are not valid'
+                    : "The operating system '{$invalid}' is not a valid operating system"
+            );
 
             return Command::FAILURE;
         }
 
         $filter = new SearchFilter(
-            operatingSystem: OperatingSystem::tryFrom($input->getOption('os') ?? ''),
+            operatingSystems: $operatingSystems,
             languages: $languages,
             search: $input->getOption('search'),
             includeHidden: $input->getOption('include-hidden'),
