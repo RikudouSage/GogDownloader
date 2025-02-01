@@ -43,6 +43,7 @@ final class DownloadManager
         callable $callback,
         ?int $startAt = null,
         int $httpTimeout = 3,
+        array $curlOptions = [],
     ): ResponseStreamInterface {
         $response = $this->httpClient->request(
             Request::METHOD_GET,
@@ -67,7 +68,10 @@ final class DownloadManager
                 'auth_bearer' => (string) $this->authentication->getAuthorization(),
                 'headers' => $headers,
                 'timeout' => $httpTimeout,
-            ]
+                'extra' => [
+                    'curl' => $curlOptions,
+                ],
+            ],
         );
 
         return $this->httpClient->stream($response);

@@ -20,6 +20,7 @@ use App\Service\Persistence\PersistenceManager;
 use App\Service\RetryService;
 use App\Trait\EnumExceptionParserTrait;
 use App\Trait\TargetDirectoryTrait;
+use InvalidArgumentException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
@@ -148,6 +149,12 @@ final class DownloadCommand extends Command
                 name: 'without',
                 mode: InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
                 description: "Don't download the games listed using this flag. The flag can be specified multiple times. Case insensitive, exact match.",
+            )
+            ->addOption(
+                name: 'bandwidth',
+                shortcut: 'b',
+                mode: InputOption::VALUE_REQUIRED,
+                description: 'Specify the maximum download speed in bytes. You can use the k postfix for kilobytes or m postfix for megabytes (for example 200k or 4m to mean 200 kilobytes and 4 megabytes respectively)',
             )
         ;
     }
@@ -368,12 +375,27 @@ final class DownloadCommand extends Command
                             $progress->setProgress(0);
                             $progress->setMessage("{$download->name} ({$download->platform}, {$download->language})");
 
-                            $responses = $this->downloadManager->download($download, function (int $current, int $total) use ($startAt, $progress, $output) {
-                                if ($total > 0) {
-                                    $progress->setMaxSteps($total + ($startAt ?? 0));
-                                    $progress->setProgress($current + ($startAt ?? 0));
+                            $curlOptions = [];
+                            if ($input->getOption('bandwidth') && defined('CURLOPT_MAX_RECV_SPEED_LARGE')) {
+                                if (defined('CURLOPT_MAX_RECV_SPEED_LARGE')) {
+                                    $curlOptions[CURLOPT_MAX_RECV_SPEED_LARGE] = $this->parseBandwidth($input->getOption('bandwidth'));
+                                } else {
+                                    $io->warning("Warning: You have specified a maximum bandwidth, but that's only available if your system has the PHP curl extension installed. Ignoring maximum bandwidth settings.");
                                 }
-                            }, $startAt, $timeout);
+                            }
+
+                            $responses = $this->downloadManager->download(
+                                download: $download,
+                                callback: function (int $current, int $total) use ($startAt, $progress, $output) {
+                                    if ($total > 0) {
+                                        $progress->setMaxSteps($total + ($startAt ?? 0));
+                                        $progress->setProgress($current + ($startAt ?? 0));
+                                    }
+                                },
+                                startAt: $startAt,
+                                httpTimeout: $timeout,
+                                curlOptions: $curlOptions,
+                            );
 
                             $hash = $writer->getMd5HashContext($targetFile);
                             foreach ($responses as $response) {
@@ -465,5 +487,30 @@ final class DownloadCommand extends Command
         if ($this->exitRequested) {
             throw new ExitException('Application has been terminated as requested previously.');
         }
+    }
+
+    private function parseBandwidth(string $bandwidth): int
+    {
+        if (is_numeric($bandwidth)) {
+            return (int) $bandwidth;
+        }
+
+        $lower = strtolower($bandwidth);
+
+        if (str_ends_with($lower, 'kb') || str_ends_with($lower, 'k')) {
+            $value = (int) $lower;
+            $value *= 1024;
+
+            return $value;
+        } else if (str_ends_with($lower, 'mb') || str_ends_with($lower, 'm')) {
+            $value = (int) $lower;
+            $value *= 1024 * 1024;
+
+            return $value;
+        } else if (str_ends_with($lower, 'b')) {
+            return (int) $lower;
+        }
+
+        throw new InvalidArgumentException("Unsupported bandwidth format: {$bandwidth}");
     }
 }
