@@ -24,6 +24,8 @@ enum OperatingSystem: string
                 OperatingSystemNumber::Ubuntu14,
                 OperatingSystemNumber::Ubuntu16,
                 OperatingSystemNumber::Ubuntu18,
+                OperatingSystemNumber::Ubuntu20,
+                OperatingSystemNumber::Ubuntu22,
             ],
         };
 
