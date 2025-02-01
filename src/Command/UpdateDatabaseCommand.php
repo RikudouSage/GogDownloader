@@ -17,6 +17,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use ValueError;
 
 #[AsCommand('update-database')]
 final class UpdateDatabaseCommand extends Command
@@ -71,7 +72,7 @@ final class UpdateDatabaseCommand extends Command
             ->addOption(
                 'language',
                 'l',
-                InputOption::VALUE_REQUIRED,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
                 'Filter by language, for list of languages run "languages"'
             )
             ->addOption(
@@ -123,9 +124,27 @@ final class UpdateDatabaseCommand extends Command
         $storedItemIds = array_map(fn (GameDetail $detail) => $detail->id, $storedItems);
         $timeout = $input->getOption('idle-timeout');
 
+        try {
+            $languages = array_map(
+                fn (string $langCode) => Language::from($langCode),
+                $input->getOption('language'),
+            );
+        } catch (ValueError $e) {
+            $regex = /** @lang RegExp */ '@^"([^"]+)" is not a valid@';
+            if (!preg_match($regex, $e->getMessage(), $matches)) {
+                $io->error('Some of the languages you provided are not valid');
+
+                return Command::FAILURE;
+            }
+
+            $io->error("The language '{$matches[1]}' is not a supported language'");
+
+            return Command::FAILURE;
+        }
+
         $filter = new SearchFilter(
             operatingSystem: OperatingSystem::tryFrom($input->getOption('os') ?? ''),
-            language: Language::tryFrom($input->getOption('language') ?? ''),
+            languages: $languages,
             search: $input->getOption('search'),
             includeHidden: $input->getOption('include-hidden'),
         );

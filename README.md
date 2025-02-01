@@ -89,6 +89,8 @@ Examples:
 
 - `gog-downloader update --os windows` - download metadata only for Windows games
 - `gog-downloader update --language en` - download metadata only for games that support English
+- `gog-downloader update --language de` - download metadata only for games that support German
+- `gog-downloader update --language cz --language de` - download metadata only for games that support Czech or German
 - `gog-downloader update --search witcher` - downloads only games that match the search string, in this case "witcher"
 - `gog-downloader update --updated-only` - only new and updates games' metadata will be downloaded
 - `gog-downloader update --new-only` - only new games' metadata will be downloaded
@@ -126,6 +128,8 @@ or ignore games you don't want to download.
 - `gog-downloader download --language en` - download only English files
 - `gog-downloader download --language cz --language-fallback-english` - download only Czech files, if the game doesn't
   support Czech, English files will be downloaded instead
+- `gog-downloader download --language cz --language de --language-fallback-english` - download only Czech and German files, if the game doesn't
+  support either, English files will be downloaded instead
 - `gog-downloader download TargetDownloadsDirectory` - downloads the files into `TargetDownloadsDirectory` directory
 - `gog-downloader download --only "overcooked! 2" --only "Overcooked: Gourmet Edition` - only downloads the 2 games listed.
   The filter is case-insensitive and needs to match the game name exactly as it's visible on GOG.
