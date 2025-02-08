@@ -9,8 +9,6 @@ final class S3FileReference
 {
     private const DEFAULT_CHUNK_SIZE = 10 * 1024 * 1024;
 
-    public readonly string $tempKey;
-
     private int $partNumber = 0;
 
     private ?string $openedObjectId = null;
@@ -29,7 +27,6 @@ final class S3FileReference
         public readonly string $key,
         public readonly S3StorageClass $requestedStorageClass,
     ) {
-        $this->tempKey = $this->key . '.gog-downloader.tmp';
     }
 
     public function __destruct()
@@ -37,7 +34,7 @@ final class S3FileReference
         if ($this->client !== null && $this->openedObjectId !== null) {
             $this->client->abortMultipartUpload([
                 'Bucket' => $this->bucket,
-                'Key' => $this->tempKey,
+                'Key' => $this->key,
                 'UploadId' => $this->openedObjectId,
             ]);
         }
@@ -49,8 +46,8 @@ final class S3FileReference
         if ($this->openedObjectId === null) {
             $this->openedObjectId = $client->createMultipartUpload([
                 'Bucket' => $this->bucket,
-                'Key' => $this->tempKey,
-                'StorageClass' => S3StorageClass::Standard->value,
+                'Key' => $this->key,
+                'StorageClass' => $this->requestedStorageClass->value,
             ])->get('UploadId');
         }
     }
@@ -73,7 +70,7 @@ final class S3FileReference
             'Body' => substr($data, 0, $chunkSize),
             'UploadId' => $this->openedObjectId,
             'Bucket' => $this->bucket,
-            'Key' => $this->tempKey,
+            'Key' => $this->key,
             'PartNumber' => ++$this->partNumber,
         ]);
         $this->parts[] = [
@@ -93,30 +90,28 @@ final class S3FileReference
             $this->client->completeMultipartUpload([
                 'UploadId' => $this->openedObjectId,
                 'Bucket' => $this->bucket,
-                'Key' => $this->tempKey,
+                'Key' => $this->key,
                 'MultipartUpload' => [
                     'Parts' => $this->parts,
                 ],
             ]);
             $this->openedObjectId = null;
 
-            while (!$this->client->doesObjectExistV2($this->bucket, $this->tempKey)) {
+            while (!$this->client->doesObjectExistV2($this->bucket, $this->key)) {
                 sleep(1);
             }
 
-            $this->client->copyObject([
+            $this->client->putObjectTagging([
+                'Bucket' => $this->bucket,
                 'Key' => $this->key,
-                'Bucket' => $this->bucket,
-                'CopySource' => "{$this->bucket}/{$this->tempKey}",
-                'MetadataDirective' => 'REPLACE',
-                'Metadata' => [
-                    'md5_hash' => $hash,
-                ],
-                'StorageClass' => $this->requestedStorageClass->value,
-            ]);
-            $this->client->deleteObject([
-                'Bucket' => $this->bucket,
-                'Key' => $this->tempKey,
+                'Tagging' => [
+                    'TagSet' => [
+                        [
+                            'Key' => 'md5_hash',
+                            'Value' => $hash,
+                        ],
+                    ],
+                ]
             ]);
         }
     }
