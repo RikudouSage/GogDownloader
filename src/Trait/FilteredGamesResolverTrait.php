@@ -123,9 +123,9 @@ trait FilteredGamesResolverTrait
             );
         }
 
-        if ($englishFallback && $languages) {
+        if ($englishFallback || $languages) {
             $iterable = Iterables::map(
-                function (GameDetail $game) use ($languages) {
+                function (GameDetail $game) use ($englishFallback, $languages) {
                     $downloads = array_filter(
                         $game->downloads,
                         fn (DownloadDescription $download) => in_array($download->language, array_map(
@@ -133,7 +133,7 @@ trait FilteredGamesResolverTrait
                             $languages,
                         ), true),
                     );
-                    if (!count($downloads)) {
+                    if (!count($downloads) && $englishFallback) {
                         $downloads = array_filter(
                             $game->downloads,
                             fn (DownloadDescription $download) => $download->language === Language::English->getLocalName(),

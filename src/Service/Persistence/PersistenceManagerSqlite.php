@@ -99,7 +99,7 @@ final class PersistenceManagerSqlite extends AbstractPersistenceManager
             $result[] = $this->serializer->deserialize([
                 'id' => $next['game_id'],
                 'title' => $next['title'],
-                'cdKey' => $next['cd_key'],
+                'cdKey' => $next['cd_key'] ?? '',
                 'downloads' => $downloads,
             ], GameDetail::class);
         }
