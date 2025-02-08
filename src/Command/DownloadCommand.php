@@ -19,6 +19,7 @@ use App\Trait\EnumExceptionParserTrait;
 use App\Trait\FilteredGamesResolverTrait;
 use App\Trait\TargetDirectoryTrait;
 use InvalidArgumentException;
+use RuntimeException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
@@ -196,6 +197,9 @@ final class DownloadCommand extends Command
                                 $writer->createDirectory($targetDir);
                             }
                             $filename = $this->downloadManager->getFilename($download, $timeout);
+                            if (!$filename) {
+                                throw new RuntimeException("{$download->name} ({$download->platform}, {$download->language}): Failed getting the filename for {$download->name}");
+                            }
                             $targetFile = $writer->getFileReference("{$targetDir}/{$filename}");
 
                             $startAt = null;

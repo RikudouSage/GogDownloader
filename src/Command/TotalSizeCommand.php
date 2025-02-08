@@ -71,6 +71,8 @@ final class TotalSizeCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $games = $this->getGames($input, $output, $this->ownedItemsManager);
 
+        $io->note('Note that if you have a lot of games, this command might take a long time.');
+
         $unit = SizeUnit::tryFrom($input->getOption('unit'));
         if ($unit === null) {
             $io->error("Unsupported unit, please use --help to see list of available units.");
