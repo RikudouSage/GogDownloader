@@ -169,6 +169,9 @@ trait FilteredGamesResolverTrait
             );
         }
 
-        return $iterable;
+        return Iterables::filter(
+            $iterable,
+            fn (GameDetail $gameDetail) => count($gameDetail->downloads) > 0,
+        );
     }
 }
