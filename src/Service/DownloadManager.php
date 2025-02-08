@@ -32,20 +32,6 @@ final class DownloadManager
         return urldecode(pathinfo($url, PATHINFO_BASENAME));
     }
 
-    public function getFileSize(DownloadDescription $download, int $httpTimeout = 3): ?int
-    {
-        $url = $this->getRealDownloadUrl($download, $httpTimeout);
-        if (!$url) {
-            return null;
-        }
-
-        $response = $this->httpClient->request(
-            Request::METHOD_HEAD,
-            $url,
-        );
-        return $response->getHeaders()['content-length'][0] ?? null;
-    }
-
     public function download(
         DownloadDescription $download,
         callable $callback,

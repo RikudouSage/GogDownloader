@@ -71,8 +71,6 @@ final class TotalSizeCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $games = $this->getGames($input, $output, $this->ownedItemsManager);
 
-        $io->note('Note that if you have a lot of games, this command might take a long time.');
-
         $unit = SizeUnit::tryFrom($input->getOption('unit'));
         if ($unit === null) {
             $io->error("Unsupported unit, please use --help to see list of available units.");
@@ -80,19 +78,10 @@ final class TotalSizeCommand extends Command
         }
 
         $short = $input->getOption('short');
-        $httpTimeout = $input->getOption('idle-timeout');
         $total = 0;
         foreach ($games as $game) {
             foreach ($game->downloads as $download) {
-                if ($output->isVeryVerbose()) {
-                    $io->comment("[{$game->title}] Downloading file '{$download->name}'");
-                }
-                $size = $this->downloadManager->getFileSize($download, $httpTimeout);
-                if ($size === null && !$short) {
-                    $io->warning("Failed getting size for {$download->name}, the results might be incomplete");
-                    continue;
-                }
-                $total += $size;
+                $total += $download->size;
             }
         }
 
@@ -108,7 +97,7 @@ final class TotalSizeCommand extends Command
         return Command::SUCCESS;
     }
 
-    private function formatToUnit(int $total, SizeUnit $unit): float
+    private function formatToUnit(float $total, SizeUnit $unit): float
     {
         return match ($unit) {
             SizeUnit::Bytes => $total,
