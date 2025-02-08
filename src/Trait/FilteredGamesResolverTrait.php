@@ -14,11 +14,6 @@ use App\Service\OwnedItemsManager;
 use Rikudou\Iterables\Iterables;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Style\SymfonyStyle;
-use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
-use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
-use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
-use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use ValueError;
 
 trait FilteredGamesResolverTrait
@@ -126,7 +121,7 @@ trait FilteredGamesResolverTrait
 
         if ($englishFallback || $languages) {
             $iterable = Iterables::map(
-                function (GameDetail $game) use ($input, $output, $englishFallback, $languages) {
+                function (GameDetail $game) use ($englishFallback, $languages) {
                     $downloads = array_filter(
                         $game->downloads,
                         fn (DownloadDescription $download) => in_array($download->language, array_map(
@@ -140,6 +135,28 @@ trait FilteredGamesResolverTrait
                             fn (DownloadDescription $download) => $download->language === Language::English->getLocalName(),
                         );
                     }
+
+                    return new GameDetail(
+                        id: $game->id,
+                        title: $game->title,
+                        cdKey: $game->cdKey,
+                        downloads: $downloads,
+                    );
+                },
+                $iterable,
+            );
+        }
+
+        if ($operatingSystems) {
+            $iterable = Iterables::map(
+                function (GameDetail $game) use ($operatingSystems) {
+                    $downloads = array_filter(
+                        $game->downloads,
+                        fn (DownloadDescription $download) => in_array($download->platform, array_map(
+                            fn (OperatingSystem $system) => $system->value,
+                            $operatingSystems,
+                        ))
+                    );
 
                     return new GameDetail(
                         id: $game->id,
