@@ -90,7 +90,7 @@ final readonly class StreamWrapperFileWriter implements FileWriter
     public function isReadable(object $targetFile): bool
     {
         if (!$this->exists($targetFile)) {
-            return is_readable(dirname($targetFile));
+            return is_readable(dirname($targetFile->path));
         }
 
         return is_readable($targetFile->path);
