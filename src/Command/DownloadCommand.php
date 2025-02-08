@@ -140,7 +140,6 @@ final class DownloadCommand extends Command
                             $game,
                             $input,
                             $englishFallback,
-                            $languages,
                             $output,
                             $download,
                             $operatingSystems,
@@ -171,21 +170,6 @@ final class DownloadCommand extends Command
                             ) {
                                 if ($output->isVerbose()) {
                                     $io->writeln("{$download->name} ({$download->platform}, {$download->language}): Skipping because of OS filter");
-                                }
-
-                                return;
-                            }
-
-                            if (
-                                $languages
-                                && !in_array($download->language, array_map(
-                                    fn (Language $language) => $language->getLocalName(),
-                                    $languages,
-                                ), true)
-                                && (!$englishFallback || $download->language !== Language::English->getLocalName())
-                            ) {
-                                if ($output->isVerbose()) {
-                                    $io->writeln("{$download->name} ({$download->platform}, {$download->language}): Skipping because of language filter");
                                 }
 
                                 return;

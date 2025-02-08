@@ -14,6 +14,7 @@ use App\Service\OwnedItemsManager;
 use Rikudou\Iterables\Iterables;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
@@ -125,7 +126,7 @@ trait FilteredGamesResolverTrait
 
         if ($englishFallback || $languages) {
             $iterable = Iterables::map(
-                function (GameDetail $game) use ($englishFallback, $languages) {
+                function (GameDetail $game) use ($input, $output, $englishFallback, $languages) {
                     $downloads = array_filter(
                         $game->downloads,
                         fn (DownloadDescription $download) => in_array($download->language, array_map(
