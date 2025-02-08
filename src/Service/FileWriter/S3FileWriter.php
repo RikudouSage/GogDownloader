@@ -135,10 +135,6 @@ final readonly class S3FileWriter implements FileWriter
             'Bucket' => $targetFile->bucket,
             'Key' => $targetFile->key,
         ]);
-//        $this->client->deleteObject([
-//            'Bucket' => $targetFile->bucket,
-//            'Key' => $targetFile->tempKey,
-//        ]);
     }
 
     private function extractPath(string $path): ExtractedS3Path
