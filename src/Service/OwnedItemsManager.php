@@ -60,7 +60,7 @@ final class OwnedItemsManager
     public function getOwnedItems(
         MediaType $mediaType,
         SearchFilter $filter = new SearchFilter(),
-        int &$productsCount = null,
+        ?int &$productsCount = null,
         int $httpTimeout = 3,
     ): iterable {
         $page = 1;

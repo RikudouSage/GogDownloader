@@ -156,6 +156,9 @@ So to download only games that support Czech either in-game or as a separate dow
 - `gog-downloader update --clear --language cz` (the `--clear` is there to delete any metadata from previous `update` runs)
 - `gog-downloader download --language cz --language-fallback-english`
 
+> Tip: If you want to see how much space you need for your games, replace the `download` command with `total-size`,
+> it includes most of the same parameters.
+
 ### Downloading saves
 
 To download cloud saves you can use the `download-saves` command: `gog-downloader download-saves` (or the shorthand
