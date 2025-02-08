@@ -80,14 +80,14 @@ final readonly class S3FileWriter implements FileWriter
 
     public function getMd5Hash(object $file): string
     {
-        $object = $this->client->headObject([
+        $object = $this->client->getObjectTagging([
             'Bucket' => $file->bucket,
             'Key' => $file->key,
         ]);
 
-        return array_find($object->get('Metadata'), function (string $value, string $key): string {
-            return $key === 'md5_hash';
-        }) ?? hash_final($this->getMd5HashContext($file));
+        return array_find($object->get('TagSet'), function (array $tag): string {
+            return $tag['Key'] === 'md5_hash';
+        })['Value'] ?? hash_final($this->getMd5HashContext($file));
     }
 
     public function createDirectory(string $path): void
@@ -135,10 +135,10 @@ final readonly class S3FileWriter implements FileWriter
             'Bucket' => $targetFile->bucket,
             'Key' => $targetFile->key,
         ]);
-        $this->client->deleteObject([
-            'Bucket' => $targetFile->bucket,
-            'Key' => $targetFile->tempKey,
-        ]);
+//        $this->client->deleteObject([
+//            'Bucket' => $targetFile->bucket,
+//            'Key' => $targetFile->tempKey,
+//        ]);
     }
 
     private function extractPath(string $path): ExtractedS3Path
@@ -159,9 +159,10 @@ final readonly class S3FileWriter implements FileWriter
             'Bucket' => $targetFile->bucket,
             'Key' => $targetFile->key,
         ]);
-        $storageClass = S3StorageClass::tryFrom($head->get('StorageClass'));
+        $storageClassName = $head->get('StorageClass') ?: S3StorageClass::Standard->value;
+        $storageClass = S3StorageClass::tryFrom($storageClassName);
         if (!$storageClass) {
-            throw new LogicException("The remote file '{$targetFile->key}' at bucket '{$targetFile->bucket} has an unsupported storage class: {$head->get('StorageClass')}");
+            throw new LogicException("The remote file '{$targetFile->key}' at bucket '{$targetFile->bucket}' has an unsupported storage class: {$storageClassName}");
         }
 
         return in_array($storageClass, [
