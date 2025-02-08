@@ -15,7 +15,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.2
+          php-version: 8.3
       - name: Extract Version Name
         id: extract_name
         uses: actions/github-script@v7
@@ -85,7 +85,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.2
+          php-version: 8.3
       - name: Extract Version Name
         id: extract_name
         uses: actions/github-script@v7
