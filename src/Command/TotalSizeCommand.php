@@ -84,6 +84,9 @@ final class TotalSizeCommand extends Command
         $total = 0;
         foreach ($games as $game) {
             foreach ($game->downloads as $download) {
+                if ($output->isVeryVerbose()) {
+                    $io->comment("[{$game->title}] Downloading file '{$download->name}'");
+                }
                 $size = $this->downloadManager->getFileSize($download, $httpTimeout);
                 if ($size === null && !$short) {
                     $io->warning("Failed getting size for {$download->name}, the results might be incomplete");
