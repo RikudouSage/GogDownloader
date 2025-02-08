@@ -22,14 +22,22 @@ final class DownloadManager
         return self::BASE_URL . $download->url;
     }
 
-    public function getFilename(DownloadDescription $download, int $httpTimeout = 3): string
+    public function getFilename(DownloadDescription $download, int $httpTimeout = 3): ?string
     {
-        return urldecode(pathinfo($this->getRealDownloadUrl($download, $httpTimeout), PATHINFO_BASENAME));
+        $url = $this->getRealDownloadUrl($download, $httpTimeout);
+        if (!$url) {
+            return null;
+        }
+
+        return urldecode(pathinfo($url, PATHINFO_BASENAME));
     }
 
     public function getFileSize(DownloadDescription $download, int $httpTimeout = 3): ?int
     {
         $url = $this->getRealDownloadUrl($download, $httpTimeout);
+        if (!$url) {
+            return null;
+        }
 
         $response = $this->httpClient->request(
             Request::METHOD_HEAD,
@@ -77,7 +85,7 @@ final class DownloadManager
         return $this->httpClient->stream($response);
     }
 
-    private function getRealDownloadUrl(DownloadDescription $download, int $httpTimeout = 3): string
+    private function getRealDownloadUrl(DownloadDescription $download, int $httpTimeout = 3): ?string
     {
         $response = $this->httpClient->request(
             Request::METHOD_HEAD,
@@ -88,6 +96,6 @@ final class DownloadManager
                 'timeout' => $httpTimeout,
             ]
         );
-        return $response->getHeaders(false)['location'][0];
+        return $response->getHeaders(false)['location'][0] ?? null;
     }
 }
