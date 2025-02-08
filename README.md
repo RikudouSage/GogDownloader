@@ -196,6 +196,22 @@ gog-downloader download s3://gog-games-backup/Games
 > Warning: Even though the app does its best to clean up after itself, you should set up automatic cleaning
 > of uncompleted multipart uploads in your bucket settings.
 
+As of version 1.9.0, you can configure the storage type to one of the supported values (all available in the [S3StorageClass](src/Enum/S3StorageClass.php) enum):
+
+- STANDARD - the default if you don't specify any
+- REDUCED_REDUNDANCY
+- STANDARD_IA
+- ONEZONE_IA
+- INTELLIGENT_TIERING
+- GLACIER
+- DEEP_ARCHIVE
+- OUTPOSTS
+- GLACIER_IR
+- SNOW
+- EXPRESS_ONEZONE
+
+Read more in the [official AWS documentation](https://aws.amazon.com/s3/storage-classes/).
+
 ## Download
 
 If you want to use the docker version, read below.

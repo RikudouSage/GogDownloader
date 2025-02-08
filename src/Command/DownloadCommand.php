@@ -12,6 +12,7 @@ use App\Enum\OperatingSystem;
 use App\Enum\Setting;
 use App\Exception\ExitException;
 use App\Exception\TooManyRetriesException;
+use App\Exception\UnreadableFileException;
 use App\Service\DownloadManager;
 use App\Service\FileWriter\FileWriterLocator;
 use App\Service\Iterables;
@@ -352,7 +353,12 @@ final class DownloadCommand extends Command
 
                             $startAt = null;
                             if (($download->md5 || $noVerify) && $writer->exists($targetFile)) {
-                                $md5 = $noVerify ? '' : $writer->getMd5Hash($targetFile);
+                                try {
+                                    $md5 = $noVerify ? '' : $writer->getMd5Hash($targetFile);
+                                } catch (UnreadableFileException) {
+                                    $io->warning("{$download->name} ({$download->platform}, {$download->language}): Tried to get existing hash of {$download->name}, but the file is not readable. It will be downloaded again");
+                                    $md5 = '';
+                                }
                                 if (!$noVerify && $download->md5 === $md5) {
                                     if ($output->isVerbose()) {
                                         $io->writeln(
@@ -368,7 +374,7 @@ final class DownloadCommand extends Command
 
                                     return;
                                 }
-                                $startAt = $writer->getSize($targetFile);
+                                $startAt = $writer->isReadable($targetFile) ? $writer->getSize($targetFile) : null;
                             }
 
                             $progress->setMaxSteps(0);
@@ -397,7 +403,11 @@ final class DownloadCommand extends Command
                                 curlOptions: $curlOptions,
                             );
 
-                            $hash = $writer->getMd5HashContext($targetFile);
+                            try {
+                                $hash = $writer->getMd5HashContext($targetFile);
+                            } catch (UnreadableFileException) {
+                                $hash = hash_init('md5');
+                            }
                             foreach ($responses as $response) {
                                 $chunk = $response->getContent();
                                 $writer->writeChunk($targetFile, $chunk, $chunkSize);

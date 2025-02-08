@@ -2,6 +2,7 @@
 
 namespace App\Service\FileWriter;
 
+use App\Exception\UnreadableFileException;
 use HashContext;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 
@@ -32,6 +33,7 @@ interface FileWriter
 
     /**
      * @param T $file
+     * @throws UnreadableFileException
      */
     public function getMd5Hash(object $file): string;
 
@@ -44,6 +46,7 @@ interface FileWriter
 
     /**
      * @param T $file
+     * @throws UnreadableFileException
      */
     public function getMd5HashContext(object $file): HashContext;
 
@@ -56,4 +59,9 @@ interface FileWriter
      * @param T $targetFile
      */
     public function remove(object $targetFile): void;
+
+    /**
+     * @param T $targetFile
+     */
+    public function isReadable(object $targetFile): bool;
 }
