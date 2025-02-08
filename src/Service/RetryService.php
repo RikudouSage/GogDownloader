@@ -26,6 +26,7 @@ final readonly class RetryService
 
                 return;
             } catch (Throwable $e) {
+                throw $e;
                 if ($this->debug) {
                     $thrown[] = $e;
                 }

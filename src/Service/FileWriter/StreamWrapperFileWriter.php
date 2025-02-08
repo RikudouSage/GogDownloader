@@ -3,6 +3,7 @@
 namespace App\Service\FileWriter;
 
 use App\DTO\FileWriter\StreamWrapperFileReference;
+use App\Exception\UnreadableFileException;
 use HashContext;
 use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 
@@ -60,6 +61,9 @@ final readonly class StreamWrapperFileWriter implements FileWriter
 
     public function getMd5HashContext(object $file): HashContext
     {
+        if (!$this->isReadable($file)) {
+            throw new UnreadableFileException('The file reference is not readable.');
+        }
         $hash = hash_init('md5');
         if (!$this->exists($file)) {
             return $hash;
@@ -81,5 +85,14 @@ final readonly class StreamWrapperFileWriter implements FileWriter
     public function remove(object $targetFile): void
     {
         unlink($targetFile->path);
+    }
+
+    public function isReadable(object $targetFile): bool
+    {
+        if (!$this->exists($targetFile)) {
+            return is_readable(dirname($targetFile));
+        }
+
+        return is_readable($targetFile->path);
     }
 }

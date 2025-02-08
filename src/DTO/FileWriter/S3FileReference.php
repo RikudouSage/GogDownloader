@@ -2,6 +2,7 @@
 
 namespace App\DTO\FileWriter;
 
+use App\Enum\S3StorageClass;
 use Aws\S3\S3Client;
 
 final class S3FileReference
@@ -26,6 +27,7 @@ final class S3FileReference
     public function __construct(
         public readonly string $bucket,
         public readonly string $key,
+        public readonly S3StorageClass $requestedStorageClass,
     ) {
         $this->tempKey = $this->key . '.gog-downloader.tmp';
     }
@@ -48,6 +50,7 @@ final class S3FileReference
             $this->openedObjectId = $client->createMultipartUpload([
                 'Bucket' => $this->bucket,
                 'Key' => $this->tempKey,
+                'StorageClass' => S3StorageClass::Standard->value,
             ])->get('UploadId');
         }
     }
@@ -109,6 +112,7 @@ final class S3FileReference
                 'Metadata' => [
                     'md5_hash' => $hash,
                 ],
+                'StorageClass' => $this->requestedStorageClass->value,
             ]);
             $this->client->deleteObject([
                 'Bucket' => $this->bucket,

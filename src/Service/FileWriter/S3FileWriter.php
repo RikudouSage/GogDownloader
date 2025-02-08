@@ -4,10 +4,16 @@ namespace App\Service\FileWriter;
 
 use App\DTO\FileWriter\ExtractedS3Path;
 use App\DTO\FileWriter\S3FileReference;
+use App\Enum\S3StorageClass;
+use App\Enum\Setting;
+use App\Exception\InvalidConfigurationException;
+use App\Exception\UnreadableFileException;
+use App\Service\Persistence\PersistenceManager;
 use Aws\S3\Exception\S3Exception;
 use Aws\S3\S3Client;
 use GuzzleHttp\Psr7\Stream;
 use HashContext;
+use LogicException;
 
 /**
  * @implements FileWriter<S3FileReference>
@@ -16,6 +22,7 @@ final readonly class S3FileWriter implements FileWriter
 {
     public function __construct(
         private S3Client $client,
+        private PersistenceManager $persistence,
     ) {
     }
 
@@ -28,7 +35,24 @@ final readonly class S3FileWriter implements FileWriter
     {
         $extracted = $this->extractPath($path);
 
-        return new S3FileReference($extracted->bucket, $extracted->key);
+        $storageClassRaw = $this->persistence->getSetting(Setting::S3StorageClass);
+        $storageClass = $storageClassRaw === null ? S3StorageClass::Standard : S3StorageClass::tryFrom($storageClassRaw);
+
+        if (!$storageClass) {
+            throw new InvalidConfigurationException("The configured storage class ({$storageClassRaw}) is not valid, please use one of: " . implode(
+                ', ',
+                    array_map(
+                        fn (S3StorageClass $class) => $class->value,
+                        S3StorageClass::cases(),
+                    )
+            ));
+        }
+
+        return new S3FileReference(
+            $extracted->bucket,
+            $extracted->key,
+            $storageClass,
+        );
     }
 
     public function exists(object|string $file): bool
@@ -77,6 +101,10 @@ final readonly class S3FileWriter implements FileWriter
 
     public function getMd5HashContext(object $file): HashContext
     {
+        if (!$this->isReadable($file)) {
+            throw new UnreadableFileException('The file reference is not readable.');
+        }
+
         $hash = hash_init('md5');
         if (!$this->exists($file)) {
             return $hash;
@@ -119,5 +147,30 @@ final readonly class S3FileWriter implements FileWriter
         $parts = explode('/', $path, 2);
 
         return new ExtractedS3Path($parts[0], $parts[1]);
+    }
+
+    public function isReadable(object $targetFile): bool
+    {
+        if (!$this->exists($targetFile)) {
+            return true;
+        }
+
+        $head = $this->client->headObject([
+            'Bucket' => $targetFile->bucket,
+            'Key' => $targetFile->key,
+        ]);
+        $storageClass = S3StorageClass::tryFrom($head->get('StorageClass'));
+        if (!$storageClass) {
+            throw new LogicException("The remote file '{$targetFile->key}' at bucket '{$targetFile->bucket} has an unsupported storage class: {$head->get('StorageClass')}");
+        }
+
+        return in_array($storageClass, [
+            S3StorageClass::Standard,
+            S3StorageClass::StandardInfrequentAccess,
+            S3StorageClass::ExpressOneZone,
+            S3StorageClass::StandardInfrequentAccess,
+            S3StorageClass::OneZoneInfrequentAccess,
+            S3StorageClass::GlacierInstantRetrieval,
+        ], true);
     }
 }

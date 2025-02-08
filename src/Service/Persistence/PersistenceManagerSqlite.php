@@ -148,11 +148,26 @@ final class PersistenceManagerSqlite extends AbstractPersistenceManager
         $pdo = $this->getPdo(self::DATABASE);
         $this->migrationManager->apply($pdo);
 
-        $prepared = $pdo->prepare('insert into settings (setting, value) VALUES (?, ?)');
-        $prepared->execute([
-            $setting->value,
-            json_encode($value),
-        ]);
+        $settingName = $setting->value;
+        $preparedSelect = $pdo->prepare('select count(id) from settings where setting = ?');
+        $preparedSelect->bindParam(1, $settingName);
+        $preparedSelect->execute();
+
+        $result = $preparedSelect->fetch(PDO::FETCH_NUM);
+
+        if (!$result[0]) {
+            $prepared = $pdo->prepare('insert into settings (setting, value) VALUES (?, ?)');
+            $prepared->execute([
+                $setting->value,
+                json_encode($value),
+            ]);
+        } else {
+            $prepared = $pdo->prepare('update settings set value = ? where setting = ?');
+            $prepared->execute([
+                json_encode($value),
+                $setting->value,
+            ]);
+        }
     }
 
     public function getSetting(Setting $setting): int|string|float|bool|null
