@@ -85,7 +85,7 @@ final readonly class S3FileWriter implements FileWriter
             'Key' => $file->key,
         ]);
 
-        return array_find($object->get('TagSet'), function (array $tag): string {
+        return array_find($object->get('TagSet'), function (array $tag): bool {
             return $tag['Key'] === 'md5_hash';
         })['Value'] ?? hash_final($this->getMd5HashContext($file));
     }
