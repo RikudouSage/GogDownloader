@@ -3,7 +3,6 @@
 namespace App\Command;
 
 use App\Enum\Language;
-use App\Enum\OperatingSystem;
 use App\Enum\Setting;
 use App\Exception\ExitException;
 use App\Exception\TooManyRetriesException;
@@ -124,7 +123,6 @@ final class DownloadCommand extends Command
 
             $timeout = $input->getOption('idle-timeout');
             $noVerify = $input->getOption('no-verify');
-            $operatingSystems = $this->getOperatingSystems($input);
             $iterable = $this->getGames($input, $output, $this->ownedItemsManager);
 
             $this->dispatchSignals();
@@ -142,7 +140,6 @@ final class DownloadCommand extends Command
                             $englishFallback,
                             $output,
                             $download,
-                            $operatingSystems,
                             $io,
                         ) {
                             $this->canKillSafely = false;
@@ -160,20 +157,6 @@ final class DownloadCommand extends Command
 
                             $format = ' %bytes_current% / %bytes_total% [%bar%] %percent:3s%% - %message%';
                             $progress->setFormat($format);
-
-                            if (
-                                $operatingSystems
-                                && !in_array($download->platform, array_map(
-                                    fn (OperatingSystem $operatingSystem) => $operatingSystem->value,
-                                    $operatingSystems,
-                                ), true)
-                            ) {
-                                if ($output->isVerbose()) {
-                                    $io->writeln("{$download->name} ({$download->platform}, {$download->language}): Skipping because of OS filter");
-                                }
-
-                                return;
-                            }
 
                             $targetDir = $this->getTargetDir($input, $game);
                             $writer = $this->writerLocator->getWriter($targetDir);
