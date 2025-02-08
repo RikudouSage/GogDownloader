@@ -10,7 +10,7 @@ on:
 jobs:
   create_phar:
     name: Create phar
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -47,7 +47,7 @@ jobs:
     name: Create docker image
     needs:
       - create_phar
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -112,7 +112,7 @@ jobs:
           path: GogDownloaderSetup.exe
   create_release:
     name: Create a release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs:
       - create_phar
       - create_docker
