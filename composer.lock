@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4cf242a4b5752b15634b6a7b3b2af37e",
+    "content-hash": "109fcc38e8fab2456150f916f010ee3d",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -1021,6 +1021,47 @@
                 "source": "https://github.com/ralouphie/getallheaders/tree/develop"
             },
             "time": "2019-03-08T08:55:37+00:00"
+        },
+        {
+            "name": "rikudou/iterables",
+            "version": "v1.3.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/RikudouSage/Iterables.git",
+                "reference": "b032fa12b1066678e77b16c4d47aff18dc1e7b4b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/RikudouSage/Iterables/zipball/b032fa12b1066678e77b16c4d47aff18dc1e7b4b",
+                "reference": "b032fa12b1066678e77b16c4d47aff18dc1e7b4b",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.3"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.59",
+                "jetbrains/phpstorm-attributes": "^1.1",
+                "phpstan/phpstan": "^1.11",
+                "phpunit/phpunit": "^11.2",
+                "symfony/polyfill-php84": "^1.30"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Rikudou\\Iterables\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Provides some cool iterable functions complementing the built-in array functions",
+            "support": {
+                "issues": "https://github.com/RikudouSage/Iterables/issues",
+                "source": "https://github.com/RikudouSage/Iterables/tree/v1.3.0"
+            },
+            "time": "2024-11-27T15:07:44+00:00"
         },
         {
             "name": "symfony/browser-kit",
@@ -5226,7 +5267,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {},
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
@@ -5235,6 +5276,6 @@
         "ext-pdo": "*",
         "ext-zlib": "*"
     },
-    "platform-dev": [],
+    "platform-dev": {},
     "plugin-api-version": "2.6.0"
 }

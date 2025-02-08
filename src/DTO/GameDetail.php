@@ -4,17 +4,17 @@ namespace App\DTO;
 
 use App\Attribute\ArrayType;
 
-final class GameDetail
+final readonly class GameDetail
 {
-    public readonly int $id;
-
-    public readonly string $title;
-
-    public readonly string $cdKey;
-
     /**
-     * @var array<DownloadDescription>
+     * @param  array<DownloadDescription> $downloads
      */
-    #[ArrayType(type: DownloadDescription::class)]
-    public readonly array $downloads;
+    public function __construct(
+        public int    $id,
+        public string $title,
+        public string $cdKey,
+        #[ArrayType(type: DownloadDescription::class)]
+        public array  $downloads,
+    ) {
+    }
 }

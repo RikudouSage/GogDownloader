@@ -24,18 +24,18 @@ final class DownloadManager
 
     public function getFilename(DownloadDescription $download, int $httpTimeout = 3): string
     {
-        $response = $this->httpClient->request(
-            Request::METHOD_GET,
-            $this->getDownloadUrl($download),
-            [
-                'auth_bearer' => (string) $this->authentication->getAuthorization(),
-                'max_redirects' => 0,
-                'timeout' => $httpTimeout,
-            ]
-        );
-        $url = $response->getHeaders(false)['location'][0];
+        return urldecode(pathinfo($this->getRealDownloadUrl($download, $httpTimeout), PATHINFO_BASENAME));
+    }
 
-        return urldecode(pathinfo($url, PATHINFO_BASENAME));
+    public function getFileSize(DownloadDescription $download, int $httpTimeout = 3): ?int
+    {
+        $url = $this->getRealDownloadUrl($download, $httpTimeout);
+
+        $response = $this->httpClient->request(
+            Request::METHOD_HEAD,
+            $url,
+        );
+        return $response->getHeaders()['content-length'][0] ?? null;
     }
 
     public function download(
@@ -75,5 +75,19 @@ final class DownloadManager
         );
 
         return $this->httpClient->stream($response);
+    }
+
+    private function getRealDownloadUrl(DownloadDescription $download, int $httpTimeout = 3): string
+    {
+        $response = $this->httpClient->request(
+            Request::METHOD_HEAD,
+            $this->getDownloadUrl($download),
+            [
+                'auth_bearer' => (string) $this->authentication->getAuthorization(),
+                'max_redirects' => 0,
+                'timeout' => $httpTimeout,
+            ]
+        );
+        return $response->getHeaders(false)['location'][0];
     }
 }

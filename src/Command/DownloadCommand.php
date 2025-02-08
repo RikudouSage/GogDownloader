@@ -2,12 +2,7 @@
 
 namespace App\Command;
 
-use App\DTO\DownloadDescription;
-use App\DTO\GameDetail;
-use App\DTO\OwnedItemInfo;
-use App\DTO\SearchFilter;
 use App\Enum\Language;
-use App\Enum\MediaType;
 use App\Enum\OperatingSystem;
 use App\Enum\Setting;
 use App\Exception\ExitException;
@@ -19,7 +14,9 @@ use App\Service\Iterables;
 use App\Service\OwnedItemsManager;
 use App\Service\Persistence\PersistenceManager;
 use App\Service\RetryService;
+use App\Trait\CommonOptionsTrait;
 use App\Trait\EnumExceptionParserTrait;
+use App\Trait\FilteredGamesResolverTrait;
 use App\Trait\TargetDirectoryTrait;
 use InvalidArgumentException;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -30,13 +27,14 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
-use ValueError;
 
 #[AsCommand('download')]
 final class DownloadCommand extends Command
 {
     use TargetDirectoryTrait;
     use EnumExceptionParserTrait;
+    use CommonOptionsTrait;
+    use FilteredGamesResolverTrait;
 
     private bool $canKillSafely = true;
 
@@ -72,85 +70,23 @@ final class DownloadCommand extends Command
                 InputOption::VALUE_NONE,
                 'Set this flag to disable verification of file content before downloading. Disables resuming of downloads.'
             )
-            ->addOption(
-                'os',
-                'o',
-                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Download only games for specified operating system, allowed values: ' . implode(
-                    ', ',
-                    array_map(
-                        fn (OperatingSystem $os) => $os->value,
-                        OperatingSystem::cases(),
-                    )
-                )
-            )
-            ->addOption(
-                'language',
-                'l',
-                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Download only games for specified language. See command "languages" for list of them.',
-            )
-            ->addOption(
-                'language-fallback-english',
-                null,
-                InputOption::VALUE_NONE,
-                'Download english versions of games when the specified language is not found.',
-            )
-            ->addOption(
-                'update',
-                'u',
-                InputOption::VALUE_NONE,
-                "If you specify this flag the local database will be updated before each download and you don't need  to update it separately"
-            )
-            ->addOption(
-                'exclude-game-with-language',
-                null,
-                InputOption::VALUE_REQUIRED,
-                'Specify a language to exclude. If a game supports this language, it will be skipped.',
-            )
-            ->addOption(
-                'retry',
-                null,
-                InputOption::VALUE_REQUIRED,
-                'How many times should the download be retried in case of failure.',
-                3,
-            )
-            ->addOption(
-                'retry-delay',
-                null,
-                InputOption::VALUE_REQUIRED,
-                'The delay in seconds between each retry.',
-                1,
-            )
-            ->addOption(
-                'skip-errors',
-                null,
-                InputOption::VALUE_NONE,
-                "Skip games that for whatever reason couldn't be downloaded"
-            )
-            ->addOption(
-                'idle-timeout',
-                null,
-                InputOption::VALUE_REQUIRED,
-                'Set the idle timeout in seconds for http requests',
-                3,
-            )
+            ->addOsFilterOption()
+            ->addLanguageFilterOption()
+            ->addLanguageFallbackEnglishOption()
+            ->addUpdateOption()
+            ->addExcludeLanguageOption()
+            ->addHttpRetryOption()
+            ->addHttpRetryDelayOption()
+            ->addSkipHttpErrorsOption()
+            ->addHttpIdleTimeoutOption()
             ->addOption(
                 name: 'chunk-size',
                 mode: InputOption::VALUE_REQUIRED,
                 description: 'The chunk size in MB. Some file providers support sending parts of a file, this options sets the size of a single part. Cannot be lower than 5',
                 default: 10,
             )
-            ->addOption(
-                name: 'only',
-                mode: InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                description: 'Only games specified using this flag will be downloaded. The flag can be specified multiple times. Case insensitive, exact match.',
-            )
-            ->addOption(
-                name: 'without',
-                mode: InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                description: "Don't download the games listed using this flag. The flag can be specified multiple times. Case insensitive, exact match.",
-            )
+            ->addGameNameFilterOption()
+            ->addExcludeGameNameFilterOption()
             ->addOption(
                 name: 'bandwidth',
                 shortcut: 'b',
@@ -167,47 +103,7 @@ final class DownloadCommand extends Command
         try {
             $this->handleSignals($io);
 
-            $noVerify = $input->getOption('no-verify');
-
-            try {
-                $operatingSystems = array_map(
-                    fn (string $operatingSystem) => OperatingSystem::from($operatingSystem),
-                    $input->getOption('os'),
-                );
-            } catch (ValueError $e) {
-                $invalid = $this->getInvalidOption($e);
-                $io->error(
-                    $invalid
-                        ? 'Some of the operating systems you provided are not valid'
-                        : "The operating system '{$invalid}' is not a valid operating system"
-                );
-
-                return Command::FAILURE;
-            }
-
-            try {
-                $languages = array_map(
-                    fn (string $langCode) => Language::from($langCode),
-                    $input->getOption('language'),
-                );
-            } catch (ValueError $e) {
-                $invalid = $this->getInvalidOption($e);
-                $io->error(
-                    $invalid
-                        ? 'Some of the languages you provided are not valid'
-                        : "The language '{$invalid}' is not a supported language'"
-                );
-
-                return Command::FAILURE;
-            }
-
-            $englishFallback = $input->getOption('language-fallback-english');
-            $excludeLanguage = Language::tryFrom($input->getOption('exclude-game-with-language') ?? '');
-            $timeout = $input->getOption('idle-timeout');
             $chunkSize = $input->getOption('chunk-size') * 1024 * 1024;
-            $only = $input->getOption('only');
-            $without = $input->getOption('without');
-
             if ($chunkSize < 5 * 1024 * 1024) {
                 $io->error('The chunk size cannot be lower than 5 MB.');
 
@@ -215,6 +111,8 @@ final class DownloadCommand extends Command
             }
             $this->dispatchSignals();
 
+            $englishFallback = $input->getOption('language-fallback-english');
+            $languages = $this->getLanguages($input);
             if ($languages && !in_array(Language::English, $languages, true) && !$englishFallback) {
                 $io->warning("GOG often has multiple language versions inside the English one. Those game files will be skipped. Specify --language-fallback-english to include English versions if your language's version doesn't exist.");
             }
@@ -223,65 +121,14 @@ final class DownloadCommand extends Command
                 $io->info('The --update flag specified, skipping local database and downloading metadata anew');
             }
 
-            $filter = new SearchFilter(
-                operatingSystems: $operatingSystems,
-                languages: $languages,
-            );
-
-            $iterable = $input->getOption('update')
-                ? $this->iterables->map(
-                    $this->ownedItemsManager->getOwnedItems(MediaType::Game, $filter, httpTimeout: $timeout),
-                    function (OwnedItemInfo $info) use ($timeout, $output): GameDetail {
-                        if ($output->isVerbose()) {
-                            $output->writeln("Updating metadata for {$info->getTitle()}...");
-                        }
-
-                        return $this->ownedItemsManager->getItemDetail($info, $timeout);
-                    },
-                )
-                : $this->ownedItemsManager->getLocalGameData();
-
-            if ($only) {
-                $iterable = $this->iterables->filter($iterable, fn (GameDetail $detail) => in_array(
-                    strtolower($detail->title),
-                    array_map(fn (string $title) => strtolower($title), $only),
-                    true,
-                ));
-            }
-            if ($without) {
-                $iterable = $this->iterables->filter($iterable, fn (GameDetail $detail) => !in_array(
-                    strtolower($detail->title),
-                    array_map(fn (string $title) => strtolower($title), $without),
-                    true,
-                ));
-            }
+            $timeout = $input->getOption('idle-timeout');
+            $noVerify = $input->getOption('no-verify');
+            $operatingSystems = $this->getOperatingSystems($input);
+            $iterable = $this->getGames($input, $output, $this->ownedItemsManager);
 
             $this->dispatchSignals();
             foreach ($iterable as $game) {
                 $downloads = $game->downloads;
-
-                if ($englishFallback && $languages) {
-                    $downloads = array_filter(
-                        $game->downloads,
-                        fn (DownloadDescription $download) => in_array($download->language, array_map(
-                            fn (Language $language) => $language->getLocalName(),
-                            $languages,
-                        ), true),
-                    );
-                    if (!count($downloads)) {
-                        $downloads = array_filter(
-                            $game->downloads,
-                            fn (DownloadDescription $download) => $download->language === Language::English->getLocalName(),
-                        );
-                    }
-                }
-                if ($excludeLanguage) {
-                    foreach ($downloads as $download) {
-                        if ($download->language === $excludeLanguage->getLocalName()) {
-                            continue 2;
-                        }
-                    }
-                }
 
                 foreach ($downloads as $download) {
                     try {
