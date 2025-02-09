@@ -11,7 +11,7 @@ use Symfony\Component\Console\Input\InputInterface;
 
 trait TargetDirectoryTrait
 {
-    private function getTargetDir(InputInterface $input, GameDetail $game, ?string $subdirectory = null): string
+    private function getTargetDir(InputInterface $input, GameDetail $game, ?string $subdirectory = null, ?NamingConvention $namingScheme = null): string
     {
         $dir = $input->getArgument('directory');
         if (PHP_OS_FAMILY === 'Windows') {
@@ -24,7 +24,7 @@ trait TargetDirectoryTrait
             }
         }
 
-        $namingScheme = NamingConvention::tryFrom($this->persistence->getSetting(Setting::NamingConvention)) ?? NamingConvention::GogSlug;
+        $namingScheme ??= NamingConvention::tryFrom($this->persistence->getSetting(Setting::NamingConvention)) ?? NamingConvention::GogSlug;
 
         switch ($namingScheme) {
             case NamingConvention::GogSlug:
