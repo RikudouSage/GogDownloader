@@ -1,6 +1,10 @@
 > Important: Version 1.6.0 uses a new database format. All newer versions will migrate your existing data
 > but it's not possible to go back from 1.6.0 to a previous version.
 
+> Since version 1.10.0 a new naming scheme has been adopted, reflecting the official slug values from GOG itself
+> which should make this tool better integrated with other 3rd-party tools. You can continue using the old format
+> but if you wish to migrate to the new one, you can use the [migrate-naming-scheme](#migrate-naming-scheme) command.
+
 # gog-downloader
 
 PHP based tool to download the games you have bought on GOG to your hard drive.
@@ -359,8 +363,8 @@ Options:
   -u, --updated-only               Download information only about updated games
   -c, --clear                      Clear local database before updating it
   -s, --search=SEARCH              Update only games that match the given search
-  -o, --os=OS                      Filter by OS, allowed values are: windows, mac, linux
-  -l, --language=LANGUAGE          Filter by language, for list of languages run "languages"
+  -o, --os=OS                      Filter by OS, allowed values are: windows, mac, linux (multiple values allowed)
+  -l, --language=LANGUAGE          Filter by language, for list of languages run "languages" (multiple values allowed)
       --include-hidden             Include hidden games in the update
       --retry=RETRY                How many times should the download be retried in case of failure. [default: 3]
       --retry-delay=RETRY-DELAY    The delay in seconds between each retry. [default: 1]
@@ -384,20 +388,23 @@ Usage:
   download [options] [--] [<directory>]
 
 Arguments:
-  directory                                                    The target directory, defaults to current dir. [default: "/Downloads"]
+  directory                                                    The target directory. [default: "/Downloads"]
 
 Options:
       --no-verify                                              Set this flag to disable verification of file content before downloading. Disables resuming of downloads.
-  -o, --os=OS                                                  Download only games for specified operating system, allowed values: windows, mac, linux
-  -l, --language=LANGUAGE                                      Download only games for specified language. See command "languages" for list of them.
-      --language-fallback-english                              Download english versions of games when the specified language is not found.
-  -u, --update                                                 If you specify this flag the local database will be updated before each download and you don't need  to update it separately
+  -o, --os=OS                                                  Only games for specified operating system, allowed values: windows, mac, linux (multiple values allowed)
+  -l, --language=LANGUAGE                                      Only games for specified language. See command "languages" for list of them. (multiple values allowed)
+      --language-fallback-english                              Use english versions of games when the specified language is not found.
+  -u, --update                                                 If you specify this flag, the local database will be updated along with this command and you don't need to update it separately
       --exclude-game-with-language=EXCLUDE-GAME-WITH-LANGUAGE  Specify a language to exclude. If a game supports this language, it will be skipped.
-      --retry=RETRY                                            How many times should the download be retried in case of failure. [default: 3]
+      --retry=RETRY                                            How many times should each request be retried in case of failure. [default: 3]
       --retry-delay=RETRY-DELAY                                The delay in seconds between each retry. [default: 1]
-      --skip-errors                                            Skip games that for whatever reason couldn't be downloaded
+      --skip-errors                                            Skip games that for whatever reason couldn't be fetched
       --idle-timeout=IDLE-TIMEOUT                              Set the idle timeout in seconds for http requests [default: 3]
       --chunk-size=CHUNK-SIZE                                  The chunk size in MB. Some file providers support sending parts of a file, this options sets the size of a single part. Cannot be lower than 5 [default: 10]
+      --only=ONLY                                              Only games specified using this flag will be fetched. The flag can be specified multiple times. Case insensitive, exact match. (multiple values allowed)
+      --without=WITHOUT                                        Don't download the games listed using this flag. The flag can be specified multiple times. Case insensitive, exact match. (multiple values allowed)
+  -b, --bandwidth=BANDWIDTH                                    Specify the maximum download speed in bytes. You can use the k postfix for kilobytes or m postfix for megabytes (for example 200k or 4m to mean 200 kilobytes and 4 megabytes respectively)
   -h, --help                                                   Display help for the given command. When no command is given display help for the list command
   -q, --quiet                                                  Do not output any message
   -V, --version                                                Display this application version
@@ -420,7 +427,7 @@ Arguments:
   directory                        The target directory. [default: "/Downloads"]
 
 Options:
-      --no-verify                  Set this flag to disable verification of file content before downloading.
+      --no-verify                  Set this flag to disable verification of file content before downloading. Disables resuming of downloads.
   -u, --update                     If you specify this flag the local database will be updated before each download and you don't need to update it separately
       --retry=RETRY                How many times should the download be retried in case of failure. [default: 3]
       --retry-delay=RETRY-DELAY    The delay in seconds between each retry. [default: 1]
@@ -432,4 +439,100 @@ Options:
       --ansi|--no-ansi             Force (or disable --no-ansi) ANSI output
   -n, --no-interaction             Do not ask any interactive question
   -v|vv|vvv, --verbose             Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug
+```
+
+### config
+
+```
+Description:
+  Configure various settings, like default location and so on
+
+Usage:
+  config [<setting> [<value>]]
+
+Arguments:
+  setting               The name of the setting, possible values: download-path, s3-storage-class, naming-convention
+  value                 The new value. If this argument is present a new value gets saved, if it's omitted the current value gets printed. Use a special value 'null' to reset the setting to default.
+
+Options:
+  -h, --help            Display help for the given command. When no command is given display help for the list command
+  -q, --quiet           Do not output any message
+  -V, --version         Display this application version
+      --ansi|--no-ansi  Force (or disable --no-ansi) ANSI output
+  -n, --no-interaction  Do not ask any interactive question
+  -v|vv|vvv, --verbose  Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug
+```
+
+### games
+
+```
+Description:
+  Gets details about a game you own, or lists your games.
+
+Usage:
+  games [<name>]
+
+Arguments:
+  name                  The name of the game to get details for
+
+Options:
+  -h, --help            Display help for the given command. When no command is given display help for the list command
+  -q, --quiet           Do not output any message
+  -V, --version         Display this application version
+      --ansi|--no-ansi  Force (or disable --no-ansi) ANSI output
+  -n, --no-interaction  Do not ask any interactive question
+  -v|vv|vvv, --verbose  Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug
+```
+
+### total-size
+
+```
+Description:
+  Calculates the total size of all your installers
+
+Usage:
+  total-size [options]
+
+Options:
+  -o, --os=OS                                                  Only games for specified operating system, allowed values: windows, mac, linux (multiple values allowed)
+  -l, --language=LANGUAGE                                      Only games for specified language. See command "languages" for list of them. (multiple values allowed)
+      --language-fallback-english                              Use english versions of games when the specified language is not found.
+  -u, --update                                                 If you specify this flag, the local database will be updated along with this command and you don't need to update it separately
+      --exclude-game-with-language=EXCLUDE-GAME-WITH-LANGUAGE  Specify a language to exclude. If a game supports this language, it will be skipped.
+      --retry=RETRY                                            How many times should each request be retried in case of failure. [default: 3]
+      --retry-delay=RETRY-DELAY                                The delay in seconds between each retry. [default: 1]
+      --skip-errors                                            Skip games that for whatever reason couldn't be fetched
+      --idle-timeout=IDLE-TIMEOUT                              Set the idle timeout in seconds for http requests [default: 3]
+      --only=ONLY                                              Only games specified using this flag will be fetched. The flag can be specified multiple times. Case insensitive, exact match. (multiple values allowed)
+      --without=WITHOUT                                        Don't download the games listed using this flag. The flag can be specified multiple times. Case insensitive, exact match. (multiple values allowed)
+      --unit=UNIT                                              The unit to display the size in. Possible values: b, kb, mb, gb, tb [default: "gb"]
+      --short                                                  When this flag is present, only the value is printed, no other text (including warnings) is outputted. Useful for scripting.
+      --precision=PRECISION                                    How many decimal places should be used when outputting the number [default: 2]
+  -h, --help                                                   Display help for the given command. When no command is given display help for the list command
+  -q, --quiet                                                  Do not output any message
+  -V, --version                                                Display this application version
+      --ansi|--no-ansi                                         Force (or disable --no-ansi) ANSI output
+  -n, --no-interaction                                         Do not ask any interactive question
+  -v|vv|vvv, --verbose                                         Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug
+```
+
+### migrate-naming-scheme
+
+```
+Description:
+  Migrates the GOG naming scheme from the old format to the new one. Migrates both the database and your already downloaded files.
+
+Usage:
+  migrate-naming-scheme [<directory>]
+
+Arguments:
+  directory             The target directory.
+
+Options:
+  -h, --help            Display help for the given command. When no command is given display help for the list command
+  -q, --quiet           Do not output any message
+  -V, --version         Display this application version
+      --ansi|--no-ansi  Force (or disable --no-ansi) ANSI output
+  -n, --no-interaction  Do not ask any interactive question
+  -v|vv|vvv, --verbose  Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug
 ```
