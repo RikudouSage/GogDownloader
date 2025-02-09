@@ -5,6 +5,7 @@ namespace App\Command;
 use App\DTO\GameDetail;
 use App\DTO\OwnedItemInfo;
 use App\Enum\MediaType;
+use App\Enum\NamingConvention;
 use App\Enum\Setting;
 use App\Service\CloudSavesManager;
 use App\Service\FileWriter\FileWriterLocator;
@@ -98,6 +99,10 @@ final class DownloadCloudSavesCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
+
+        if ($this->persistence->getSetting(Setting::NamingConvention) === NamingConvention::Custom->value) {
+            $io->warning("You're using the deprecated custom naming convention for game directories. To migrate your game directory to the new naming convention, please use the command 'migrate-naming-scheme'.");
+        }
 
         $noVerify = $input->getOption('no-verify');
         $update = $input->getOption('update');

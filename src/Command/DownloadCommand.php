@@ -3,6 +3,7 @@
 namespace App\Command;
 
 use App\Enum\Language;
+use App\Enum\NamingConvention;
 use App\Enum\Setting;
 use App\Exception\ExitException;
 use App\Exception\InvalidValueException;
@@ -100,6 +101,10 @@ final class DownloadCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
+
+        if ($this->persistence->getSetting(Setting::NamingConvention) === NamingConvention::Custom->value) {
+            $io->warning("You're using the deprecated custom naming convention for game directories. To migrate your game directory to the new naming convention, please use the command 'migrate-naming-scheme'.");
+        }
 
         try {
             $this->handleSignals($io);
