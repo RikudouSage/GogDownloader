@@ -70,6 +70,6 @@ final class AppKernel extends Kernel
 
     private function getAppKey(): string
     {
-        return md5(file_get_contents(__FILE__) . '1');
+        return md5(file_get_contents(__FILE__) . '2');
     }
 }

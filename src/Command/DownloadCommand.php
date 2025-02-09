@@ -246,7 +246,10 @@ final class DownloadCommand extends Command
 
                             $progress->finish();
                             $io->newLine();
-                        }, maxRetries: $input->getOption('retry'), retryDelay: $input->getOption('retry-delay'), ignoreExceptions: [InvalidValueException::class]);
+                        }, maxRetries: $input->getOption('retry'), retryDelay: $input->getOption('retry-delay'), ignoreExceptions: [
+                            InvalidValueException::class,
+                            ExitException::class,
+                        ]);
                     } catch (TooManyRetriesException $e) {
                         if (!$input->getOption('skip-errors')) {
                             throw $e;
