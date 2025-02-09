@@ -7,9 +7,12 @@ use App\DTO\OwnedItemInfo;
 use App\DTO\SearchFilter;
 use App\Enum\Language;
 use App\Enum\MediaType;
+use App\Enum\NamingConvention;
 use App\Enum\OperatingSystem;
+use App\Enum\Setting;
 use App\Exception\TooManyRetriesException;
 use App\Service\OwnedItemsManager;
+use App\Service\Persistence\PersistenceManager;
 use App\Service\RetryService;
 use App\Trait\EnumExceptionParserTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -27,7 +30,8 @@ final class UpdateDatabaseCommand extends Command
 
     public function __construct(
         private readonly OwnedItemsManager $ownedItemsManager,
-        private readonly RetryService $retryService,
+        private readonly RetryService      $retryService,
+        private readonly PersistenceManager $persistence,
     ) {
         parent::__construct();
     }
@@ -118,6 +122,10 @@ final class UpdateDatabaseCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
+
+        if ($this->persistence->getSetting(Setting::NamingConvention) === NamingConvention::Custom->value) {
+            $io->warning("You're using the deprecated custom naming convention for game directories. To migrate your game directory to the new naming convention, please use the command 'migrate-naming-scheme'.");
+        }
 
         if ($input->getOption('clear')) {
             $this->ownedItemsManager->storeGamesData([]);
