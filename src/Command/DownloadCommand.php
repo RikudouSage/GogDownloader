@@ -5,6 +5,7 @@ namespace App\Command;
 use App\Enum\Language;
 use App\Enum\Setting;
 use App\Exception\ExitException;
+use App\Exception\InvalidValueException;
 use App\Exception\TooManyRetriesException;
 use App\Exception\UnreadableFileException;
 use App\Service\DownloadManager;
@@ -240,7 +241,7 @@ final class DownloadCommand extends Command
 
                             $progress->finish();
                             $io->newLine();
-                        }, $input->getOption('retry'), $input->getOption('retry-delay'));
+                        }, maxRetries: $input->getOption('retry'), retryDelay: $input->getOption('retry-delay'), ignoreExceptions: [InvalidValueException::class]);
                     } catch (TooManyRetriesException $e) {
                         if (!$input->getOption('skip-errors')) {
                             throw $e;

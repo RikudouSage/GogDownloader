@@ -13,4 +13,6 @@ interface OwnedItemInfo
     public function getType(): MediaType;
 
     public function hasUpdates(): bool;
+
+    public function getSlug(): string;
 }

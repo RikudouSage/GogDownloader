@@ -16,7 +16,7 @@ final readonly class RetryService
      * @throws TooManyRetriesException
      * @throws Throwable
      */
-    public function retry(callable $callable, int $maxRetries, int $retryDelay, ?array $exceptions = null): void
+    public function retry(callable $callable, int $maxRetries, int $retryDelay, ?array $exceptions = null, ?array $ignoreExceptions = null): void
     {
         $retries = 0;
         $thrown = [];
@@ -31,6 +31,9 @@ final readonly class RetryService
                 }
                 ++$retries;
                 if (!$this->matches($e, $exceptions)) {
+                    throw $e;
+                }
+                if ($ignoreExceptions && $this->matches($e, $ignoreExceptions)) {
                     throw $e;
                 }
                 sleep($retryDelay);
