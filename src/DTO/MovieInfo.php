@@ -29,4 +29,9 @@ final class MovieInfo implements OwnedItemInfo
     {
         return false;
     }
+
+    public function getSlug(): string
+    {
+        return '';
+    }
 }

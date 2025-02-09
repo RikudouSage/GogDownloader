@@ -264,6 +264,7 @@ final class OwnedItemsManager
 
         $detail = $this->serializer->deserialize($response->getContent(), GameDetail::class, [
             'id' => $item->getId(),
+            'slug' => $item->getSlug(),
         ]);
         foreach ($detail->downloads as $download) {
             $this->setMd5($download, $detail, $httpTimeout);

@@ -141,6 +141,7 @@ trait FilteredGamesResolverTrait
                         title: $game->title,
                         cdKey: $game->cdKey,
                         downloads: $downloads,
+                        slug: $game->slug,
                     );
                 },
                 $iterable,
@@ -163,6 +164,7 @@ trait FilteredGamesResolverTrait
                         title: $game->title,
                         cdKey: $game->cdKey,
                         downloads: $downloads,
+                        slug: $game->slug,
                     );
                 },
                 $iterable,

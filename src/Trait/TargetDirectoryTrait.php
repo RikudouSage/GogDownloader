@@ -3,6 +3,10 @@
 namespace App\Trait;
 
 use App\DTO\GameDetail;
+use App\Enum\NamingConvention;
+use App\Enum\Setting;
+use App\Exception\InvalidValueException;
+use LogicException;
 use Symfony\Component\Console\Input\InputInterface;
 
 trait TargetDirectoryTrait
@@ -20,9 +24,23 @@ trait TargetDirectoryTrait
             }
         }
 
-        $title = preg_replace('@[^a-zA-Z-_0-9.]@', '_', $game->title);
-        $title = preg_replace('@_{2,}@', '_', $title);
-        $title = trim($title, '.');
+        $namingScheme = NamingConvention::tryFrom($this->persistence->getSetting(Setting::NamingConvention)) ?? NamingConvention::GogSlug;
+
+        switch ($namingScheme) {
+            case NamingConvention::GogSlug:
+                if (!$game->slug) {
+                    throw new InvalidValueException("GOG Downloader is configured to use the GOG slug naming scheme, but the game '{$game->title}' does not have a slug. If you migrated from the previous naming scheme, please run the update command first.");
+                }
+                $title = $game->slug;
+                break;
+            case NamingConvention::Custom:
+                $title = preg_replace('@[^a-zA-Z-_0-9.]@', '_', $game->title);
+                $title = preg_replace('@_{2,}@', '_', $title);
+                $title = trim($title, '.');
+                break;
+            default:
+                throw new LogicException('Unimplemented naming scheme: ' . $namingScheme->value);
+        }
 
         $dir = "{$dir}/{$title}";
         if ($subdirectory !== null) {

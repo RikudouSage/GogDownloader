@@ -16,6 +16,8 @@ final class GameInfo implements OwnedItemInfo
 
     public readonly bool $isNew;
 
+    public readonly ?string $slug;
+
     public function getId(): int
     {
         return $this->id;
@@ -34,5 +36,10 @@ final class GameInfo implements OwnedItemInfo
     public function hasUpdates(): bool
     {
         return $this->hasUpdates || $this->isNew;
+    }
+
+    public function getSlug(): string
+    {
+        return $this->slug ?? '';
     }
 }

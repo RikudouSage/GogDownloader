@@ -15,6 +15,7 @@ final readonly class GameDetail
         public string $cdKey,
         #[ArrayType(type: DownloadDescription::class)]
         public array  $downloads,
+        public string $slug,
     ) {
     }
 }

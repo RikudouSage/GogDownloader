@@ -101,6 +101,7 @@ final class PersistenceManagerSqlite extends AbstractPersistenceManager
                 'title' => $next['title'],
                 'cdKey' => $next['cd_key'] ?? '',
                 'downloads' => $downloads,
+                'slug' => $next['slug'] ?? '',
             ], GameDetail::class);
         }
 
@@ -113,16 +114,18 @@ final class PersistenceManagerSqlite extends AbstractPersistenceManager
         $this->migrationManager->apply($pdo);
 
         $pdo->prepare(
-            'insert into games (title, cd_key, game_id)
-                   VALUES (?, ?, ?)
+            'insert into games (title, cd_key, game_id, slug)
+                   VALUES (?, ?, ?, ?)
                    ON CONFLICT DO UPDATE SET title   = excluded.title,
                                              cd_key  = excluded.cd_key,
-                                             game_id = excluded.game_id
+                                             game_id = excluded.game_id,
+                                             slug    = excluded.slug
                    '
         )->execute([
             $detail->title,
             $detail->cdKey ?: null,
             $detail->id,
+            $detail->slug,
         ]);
 
         $query = $pdo->prepare('select id from games where game_id = ?');
