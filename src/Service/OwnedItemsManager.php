@@ -184,11 +184,13 @@ final class OwnedItemsManager
     {
         $parts = explode('/', $download->url);
         $id = $parts[array_key_last($parts)];
+        $gameId = $download->gogGameId ?? $game->id;
+
         $response = $this->httpClient->request(
             Request::METHOD_GET,
             new Url(
                 host: self::GOG_API_URL,
-                path: "products/{$game->id}",
+                path: "products/{$gameId}",
                 query: [
                     'expand' => 'downloads',
                 ]

@@ -134,7 +134,7 @@ final class PersistenceManagerSqlite extends AbstractPersistenceManager
 
         $pdo->prepare('delete from downloads where game_id = ?')->execute([$id]);
         foreach ($detail->downloads as $download) {
-            $pdo->prepare('insert into downloads (language, platform, name, size, url, md5, game_id) VALUES (?, ?, ?, ?, ?, ?, ?)')->execute([
+            $pdo->prepare('insert into downloads (language, platform, name, size, url, md5, game_id, gog_game_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')->execute([
                 $download->language,
                 $download->platform,
                 $download->name,
@@ -142,6 +142,7 @@ final class PersistenceManagerSqlite extends AbstractPersistenceManager
                 $download->url,
                 $download->md5,
                 $id,
+                $download->gogGameId,
             ]);
         }
     }
