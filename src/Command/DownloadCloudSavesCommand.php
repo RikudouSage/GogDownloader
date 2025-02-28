@@ -45,16 +45,11 @@ final class DownloadCloudSavesCommand extends Command
 
     protected function configure(): void
     {
-        $defaultDirectory = $_ENV['DOWNLOAD_DIRECTORY']
-            ?? $this->persistence->getSetting(Setting::DownloadPath)
-            ?? getcwd();
-
         $this
             ->addArgument(
                 'directory',
                 InputArgument::OPTIONAL,
                 'The target directory.',
-                $defaultDirectory,
             )
             ->addOption(
                 'no-verify',

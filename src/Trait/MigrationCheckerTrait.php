@@ -13,6 +13,6 @@ trait MigrationCheckerTrait
             return;
         }
 
-        $output->writeln("<warning>> The database needs migrating after an update, this command might take more time than usual, please don't cancel it in the middle of a migration.</warning>");
+        $output->writeln("<info>> The database needs migrating after an update, this command might take more time than usual, please don't cancel it in the middle of a migration.</info>");
     }
 }

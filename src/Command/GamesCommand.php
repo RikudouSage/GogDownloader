@@ -6,6 +6,8 @@ use App\DTO\GameDetail;
 use App\Exception\ExitException;
 use App\Service\DownloadManager;
 use App\Service\OwnedItemsManager;
+use App\Service\Persistence\PersistenceManager;
+use App\Trait\MigrationCheckerTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -17,9 +19,12 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand('games', description: 'Gets details about a game you own, or lists your games.')]
 final class GamesCommand extends Command
 {
+    use MigrationCheckerTrait;
+
     public function __construct(
         private readonly OwnedItemsManager $ownedItemsManager,
         private readonly DownloadManager $downloadManager,
+        private readonly PersistenceManager $persistence,
     ) {
         parent::__construct();
     }
@@ -38,6 +43,7 @@ final class GamesCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
+        $this->showInfoIfMigrationsAreNeeded($io, $this->persistence);
 
         try {
             $gameName = $input->getArgument('name') ?? $this->selectGame($input, $io);
