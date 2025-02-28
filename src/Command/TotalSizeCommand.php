@@ -5,8 +5,10 @@ namespace App\Command;
 use App\Enum\SizeUnit;
 use App\Service\DownloadManager;
 use App\Service\OwnedItemsManager;
+use App\Service\Persistence\PersistenceManager;
 use App\Trait\CommonOptionsTrait;
 use App\Trait\FilteredGamesResolverTrait;
+use App\Trait\MigrationCheckerTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -19,10 +21,12 @@ final class TotalSizeCommand extends Command
 {
     use CommonOptionsTrait;
     use FilteredGamesResolverTrait;
+    use MigrationCheckerTrait;
 
     public function __construct(
         private readonly DownloadManager $downloadManager,
         private readonly OwnedItemsManager $ownedItemsManager,
+        private readonly PersistenceManager $persistence,
     ) {
         parent::__construct();
     }
@@ -69,6 +73,8 @@ final class TotalSizeCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
+        $this->showInfoIfMigrationsAreNeeded($io, $this->persistence);
+
         $games = $this->getGames($input, $output, $this->ownedItemsManager);
 
         $unit = SizeUnit::tryFrom($input->getOption('unit'));

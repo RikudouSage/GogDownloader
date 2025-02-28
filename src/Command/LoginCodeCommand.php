@@ -4,7 +4,9 @@ namespace App\Command;
 
 use App\Exception\AuthenticationException;
 use App\Service\AuthenticationManager;
+use App\Service\Persistence\PersistenceManager;
 use App\Service\WebAuthentication;
+use App\Trait\MigrationCheckerTrait;
 use App\Validator\NonEmptyValidator;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -16,8 +18,11 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand('code-login')]
 final class LoginCodeCommand extends Command
 {
+    use MigrationCheckerTrait;
+
     public function __construct(
         private readonly AuthenticationManager $authenticationManager,
+        private readonly PersistenceManager $persistence,
     ) {
         parent::__construct();
     }
@@ -37,6 +42,7 @@ final class LoginCodeCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
+        $this->showInfoIfMigrationsAreNeeded($io, $this->persistence);
 
         $io->writeln([
             '',

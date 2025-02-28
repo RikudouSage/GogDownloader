@@ -214,6 +214,17 @@ final class PersistenceManagerSqlite extends AbstractPersistenceManager
         return $result['compressed'] ?? null;
     }
 
+    public function needsMigrating(bool $excludeEmpty = false): bool
+    {
+        $pdo = $this->getPdo(self::DATABASE);
+        $count = $this->migrationManager->countUnappliedMigrations($pdo);
+        if ($excludeEmpty && $count === $this->migrationManager->countAllMigrations()) {
+            return false;
+        }
+
+        return $count > 0;
+    }
+
     private function getPdo(
         #[ExpectedValues(valuesFromClass: self::class)]
         string $file

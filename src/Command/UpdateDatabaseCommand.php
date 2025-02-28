@@ -15,6 +15,7 @@ use App\Service\OwnedItemsManager;
 use App\Service\Persistence\PersistenceManager;
 use App\Service\RetryService;
 use App\Trait\EnumExceptionParserTrait;
+use App\Trait\MigrationCheckerTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -27,6 +28,7 @@ use ValueError;
 final class UpdateDatabaseCommand extends Command
 {
     use EnumExceptionParserTrait;
+    use MigrationCheckerTrait;
 
     public function __construct(
         private readonly OwnedItemsManager $ownedItemsManager,
@@ -122,6 +124,7 @@ final class UpdateDatabaseCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
+        $this->showInfoIfMigrationsAreNeeded($io, $this->persistence);
 
         if ($this->persistence->getSetting(Setting::NamingConvention) === NamingConvention::Custom->value) {
             $io->warning("You're using the deprecated custom naming convention for game directories. To migrate your game directory to the new naming convention, please use the command 'migrate-naming-scheme'.");

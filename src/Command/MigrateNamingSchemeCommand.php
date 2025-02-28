@@ -6,6 +6,7 @@ use App\Enum\NamingConvention;
 use App\Enum\Setting;
 use App\Service\OwnedItemsManager;
 use App\Service\Persistence\PersistenceManager;
+use App\Trait\MigrationCheckerTrait;
 use App\Trait\TargetDirectoryTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -19,6 +20,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 final class MigrateNamingSchemeCommand extends Command
 {
     use TargetDirectoryTrait;
+    use MigrationCheckerTrait;
 
     public function __construct(
         private readonly PersistenceManager $persistence,
@@ -46,6 +48,7 @@ final class MigrateNamingSchemeCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
+        $this->showInfoIfMigrationsAreNeeded($io, $this->persistence);
 
         $configuredDirectory = $input->getArgument('directory');
 
