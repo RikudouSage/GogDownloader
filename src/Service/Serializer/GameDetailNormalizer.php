@@ -5,6 +5,7 @@ namespace App\Service\Serializer;
 use App\DTO\DownloadDescription;
 use App\DTO\GameDetail;
 use App\DTO\MultipleValuesWrapper;
+use App\Helper\LatelyBoundStringValue;
 use App\Service\DownloadManager;
 use App\Service\Serializer;
 use Error;
@@ -46,23 +47,23 @@ final readonly class GameDetailNormalizer implements SerializerNormalizer
             if ($finalDownload->gogGameId) {
                 continue;
             }
-            $id = $this->downloadManager->getGameId($finalDownload);
-            if ($id) {
-                try {
-                    $md5 = $finalDownload->md5;
-                } catch (Error) {
-                    $md5 = null;
-                }
-                $finalDownloads[$index] = new DownloadDescription(
-                    language: $finalDownload->language,
-                    platform: $finalDownload->platform,
-                    name: $finalDownload->name,
-                    size: $finalDownload->size,
-                    url: $finalDownload->url,
-                    md5: $md5,
-                    gogGameId: $id,
-                );
+            $id = new LatelyBoundStringValue(function () use ($finalDownload): string {
+                return $this->downloadManager->getGameId($finalDownload);
+            });
+            try {
+                $md5 = $finalDownload->md5;
+            } catch (Error) {
+                $md5 = null;
             }
+            $finalDownloads[$index] = new DownloadDescription(
+                language: $finalDownload->language,
+                platform: $finalDownload->platform,
+                name: $finalDownload->name,
+                size: $finalDownload->size,
+                url: $finalDownload->url,
+                md5: $md5,
+                gogGameId: $id,
+            );
         }
 
         return new GameDetail(
