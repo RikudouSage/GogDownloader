@@ -13,6 +13,7 @@ use App\Enum\Language;
 use App\Enum\MediaType;
 use App\Enum\OperatingSystem;
 use App\Exception\AuthorizationException;
+use App\Helper\LatelyBoundStringValue;
 use App\Service\Persistence\PersistenceManager;
 use DateInterval;
 use Exception;
@@ -300,7 +301,13 @@ final class OwnedItemsManager
 
     private function setMd5(DownloadDescription $download, GameDetail $game, int $httpTimeout)
     {
-        $md5 = $this->getChecksum($download, $game, $httpTimeout);
+        if ($download->gogGameId instanceof LatelyBoundStringValue) {
+            $md5 = new LatelyBoundStringValue(function () use ($download, $game, $httpTimeout): string {
+               return $this->getChecksum($download, $game, $httpTimeout) ?? '';
+            });
+        } else {
+            $md5 = $this->getChecksum($download, $game, $httpTimeout);
+        }
         if ($md5 === null) {
             $md5 = '';
         }
