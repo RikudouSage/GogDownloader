@@ -4,6 +4,7 @@ namespace App\Service\Serializer;
 
 use App\DTO\DownloadDescription;
 use App\DTO\MultipleValuesWrapper;
+use App\Service\Serializer;
 use ReflectionProperty;
 use RuntimeException;
 
@@ -13,19 +14,22 @@ final class DownloadDescriptionNormalizer implements SerializerNormalizer
     ) {
     }
 
-    public function normalize(array $value, array $context = []): MultipleValuesWrapper|DownloadDescription
+    public function normalize(array $value, array $context, Serializer $serializer): MultipleValuesWrapper|DownloadDescription
     {
         if (isset($value[0])) {
             $results = [];
             $language = $value[0];
             foreach ($value[1] as $platform => $downloads) {
                 foreach ($downloads as $download) {
-                    $object = new DownloadDescription();
-                    $this->set($object, 'language', $language);
-                    $this->set($object, 'platform', $platform);
-                    $this->set($object, 'name', $download['name']);
-                    $this->set($object, 'size', $this->parseSize($download['size']));
-                    $this->set($object, 'url', $download['manualUrl']);
+                    $object = new DownloadDescription(
+                        language: $language,
+                        platform: $platform,
+                        name: $download['name'],
+                        size: $this->parseSize($download['size']),
+                        url: $download['manualUrl'],
+                        md5: null,
+                        gogGameId: $value['gogGameId'] ?? null,
+                    );
 
                     $results[] = $object;
                 }
@@ -35,13 +39,15 @@ final class DownloadDescriptionNormalizer implements SerializerNormalizer
         }
 
         if (isset($value['game_id'])) {
-            $object = new DownloadDescription();
-            $this->set($object, 'language', $value['language']);
-            $this->set($object, 'platform', $value['platform']);
-            $this->set($object, 'name', $value['name']);
-            $this->set($object, 'size', $value['size']);
-            $this->set($object, 'url', $value['url']);
-            $this->set($object, 'md5', $value['md5']);
+            $object = new DownloadDescription(
+                language: $value['language'],
+                platform: $value['platform'],
+                name: $value['name'],
+                size: $value['size'],
+                url: $value['url'],
+                md5: $value['md5'],
+                gogGameId: $value['gog_game_id'] ?? null,
+            );
 
             return $object;
         }

@@ -44,7 +44,7 @@ final class Serializer
         $object = $this->getObject($targetClass);
 
         if ($normalizer = $this->findNormalizer($object)) {
-            return $normalizer->normalize($json, $context);
+            return $normalizer->normalize($json, $context, $this);
         } else {
             foreach ($this->getProperties($object) as $property) {
                 $this->setProperty(

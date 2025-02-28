@@ -32,6 +32,26 @@ final class DownloadManager
         return urldecode(pathinfo($url, PATHINFO_BASENAME));
     }
 
+    public function getGameId(DownloadDescription $downloadDescription, int $httpTimeout = 3): ?int
+    {
+        if ($downloadDescription->gogGameId) {
+            return $downloadDescription->gogGameId;
+        }
+
+        $url = $this->getRealDownloadUrl($downloadDescription, $httpTimeout);
+        if (!$url) {
+            return null;
+        }
+
+        $parts = explode('/', $url);
+        $index = array_search('offline', $parts);
+        if (!$index) {
+            return null;
+        }
+
+        return $parts[$index + 2] ?? null;
+    }
+
     public function download(
         DownloadDescription $download,
         callable $callback,
