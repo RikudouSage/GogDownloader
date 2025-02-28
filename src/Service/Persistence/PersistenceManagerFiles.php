@@ -110,4 +110,9 @@ final class PersistenceManagerFiles extends AbstractPersistenceManager
 
         file_put_contents($file, json_encode($content));
     }
+
+    public function needsMigrating(bool $excludeEmpty = false): bool
+    {
+        return false;
+    }
 }

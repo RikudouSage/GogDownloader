@@ -4,6 +4,7 @@ namespace App\Command;
 
 use App\Enum\Setting;
 use App\Service\Persistence\PersistenceManager;
+use App\Trait\MigrationCheckerTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -14,6 +15,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand('config', description: 'Configure various settings, like default location and so on')]
 final class ConfigCommand extends Command
 {
+    use MigrationCheckerTrait;
+
     public function __construct(
         private readonly PersistenceManager $persistence,
     ) {
@@ -42,6 +45,7 @@ final class ConfigCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
+        $this->showInfoIfMigrationsAreNeeded($io, $this->persistence);
 
         $settingName = $input->getArgument('setting');
 

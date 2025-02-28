@@ -31,4 +31,6 @@ interface PersistenceManager
     public function storeUncompressedHash(string $compressedHash, string $uncompressedHash): void;
 
     public function getCompressedHash(string $uncompressedHash): ?string;
+
+    public function needsMigrating(bool $excludeEmpty = false): bool;
 }

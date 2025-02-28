@@ -24,25 +24,46 @@ final class MigrationManager
         if ($this->applied) {
             return;
         }
+
+        foreach ($this->getMigrationsToApply($pdo) as $migration) {
+            $migration->migrate($pdo);
+            $statement = $pdo->prepare('INSERT INTO migrations (version, created) VALUES (?, ?)');
+            $statement->execute([
+                $migration->getVersion(),
+                (new DateTimeImmutable())->format('c'),
+            ]);
+        }
+
+        $this->applied = true;
+    }
+
+    public function countUnappliedMigrations(PDO $pdo): int
+    {
+        return count($this->getMigrationsToApply($pdo));
+    }
+
+    public function countAllMigrations(): int
+    {
+        $migrations = is_countable($this->migrations) ? $this->migrations : [...$this->migrations];
+
+        return count($migrations);
+    }
+
+    /**
+     * @return array<Migration>
+     */
+    private function getMigrationsToApply(PDO $pdo): array
+    {
         $migrations = [...$this->migrations];
         usort(
             $migrations,
             fn (Migration $migration1, Migration $migration2) => $migration1->getVersion() <=> $migration2->getVersion(),
         );
 
-        foreach ($migrations as $migration) {
-            assert($migration instanceof Migration);
-            if (!$this->isApplied($migration, $pdo)) {
-                $migration->migrate($pdo);
-                $statement = $pdo->prepare('INSERT INTO migrations (version, created) VALUES (?, ?)');
-                $statement->execute([
-                    $migration->getVersion(),
-                    (new DateTimeImmutable())->format('c'),
-                ]);
-            }
-        }
-
-        $this->applied = true;
+        return array_filter(
+            $migrations,
+            fn (Migration $migration) => !$this->isApplied($migration, $pdo),
+        );
     }
 
     private function isApplied(Migration $migration, PDO $pdo): bool

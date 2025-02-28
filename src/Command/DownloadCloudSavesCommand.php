@@ -13,6 +13,7 @@ use App\Service\Iterables;
 use App\Service\OwnedItemsManager;
 use App\Service\Persistence\PersistenceManager;
 use App\Service\RetryService;
+use App\Trait\MigrationCheckerTrait;
 use App\Trait\TargetDirectoryTrait;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -28,6 +29,7 @@ use Throwable;
 final class DownloadCloudSavesCommand extends Command
 {
     use TargetDirectoryTrait;
+    use MigrationCheckerTrait;
 
     public function __construct(
         private readonly CloudSavesManager $cloudSaves,
@@ -99,6 +101,7 @@ final class DownloadCloudSavesCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
+        $this->showInfoIfMigrationsAreNeeded($io, $this->persistence);
 
         if ($this->persistence->getSetting(Setting::NamingConvention) === NamingConvention::Custom->value) {
             $io->warning("You're using the deprecated custom naming convention for game directories. To migrate your game directory to the new naming convention, please use the command 'migrate-naming-scheme'.");
