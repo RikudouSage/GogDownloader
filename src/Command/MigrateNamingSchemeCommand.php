@@ -31,17 +31,15 @@ final class MigrateNamingSchemeCommand extends Command
 
     protected function configure(): void
     {
-        $defaultDirectory = $_ENV['DOWNLOAD_DIRECTORY']
-            ?? $this->persistence->getSetting(Setting::DownloadPath)
-            ?? null;
-
-        $this->setHidden($this->persistence->getSetting(Setting::NamingConvention) !== NamingConvention::Custom->value);
+        $this->setHidden(
+            !$this->persistence->needsMigrating()
+            && $this->persistence->getSetting(Setting::NamingConvention) !== NamingConvention::Custom->value
+        );
 
         $this->addArgument(
             'directory',
             InputArgument::OPTIONAL,
             'The target directory.',
-            $defaultDirectory,
         );
     }
 
@@ -50,7 +48,10 @@ final class MigrateNamingSchemeCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $this->showInfoIfMigrationsAreNeeded($io, $this->persistence);
 
-        $configuredDirectory = $input->getArgument('directory');
+        $configuredDirectory = $input->getArgument('directory')
+            ?? $_ENV['DOWNLOAD_DIRECTORY']
+            ?? $this->persistence->getSetting(Setting::DownloadPath)
+        ;
 
         if (!$configuredDirectory) {
             if (!$input->isInteractive()) {

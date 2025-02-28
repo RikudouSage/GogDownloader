@@ -13,7 +13,12 @@ trait TargetDirectoryTrait
 {
     private function getTargetDir(InputInterface $input, GameDetail $game, ?string $subdirectory = null, ?NamingConvention $namingScheme = null): string
     {
-        $dir = $input->getArgument('directory');
+        $dir = $input->getArgument('directory')
+            ?? $_ENV['DOWNLOAD_DIRECTORY']
+            ?? $this->persistence->getSetting(Setting::DownloadPath)
+            ?? getcwd()
+        ;
+
         if (PHP_OS_FAMILY === 'Windows') {
             if (!preg_match('/^[a-zA-Z]:\\\\/', $dir)) {
                 $dir = getcwd() . '/' . $dir;

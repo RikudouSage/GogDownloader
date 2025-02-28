@@ -57,16 +57,12 @@ final class DownloadCommand extends Command
 
     protected function configure()
     {
-        $defaultDirectory = $_ENV['DOWNLOAD_DIRECTORY']
-            ?? $this->persistence->getSetting(Setting::DownloadPath)
-            ?? getcwd();
         $this
             ->setDescription('Downloads all files from the local database (see update command). Can resume downloads unless --no-verify is specified.')
             ->addArgument(
                 'directory',
                 InputArgument::OPTIONAL,
                 'The target directory.',
-                $defaultDirectory,
             )
             ->addOption(
                 'no-verify',
