@@ -1,10 +1,3 @@
-> Important: Version 1.6.0 uses a new database format. All newer versions will migrate your existing data
-> but it's not possible to go back from 1.6.0 to a previous version.
-
-> Since version 1.10.0 a new naming scheme has been adopted, reflecting the official slug values from GOG itself
-> which should make this tool better integrated with other 3rd-party tools. You can continue using the old format
-> but if you wish to migrate to the new one, you can use the [migrate-naming-scheme](#migrate-naming-scheme) command.
-
 # gog-downloader
 
 PHP based tool to download the games you have bought on GOG to your hard drive.
@@ -14,6 +7,16 @@ Requires `php 8.2+` (with simplexml and json) or `docker`. On Windows you can us
 By default, the games are saved in the directory you run the commands from, you can also specify your own.
 
 You can run `gog-downloader help` or `gog-downloader help [subcommand]` for more info.
+
+> In version 1.11.0, support for downloading DLC was added. It requires storing additional metadata so running
+> a full run of the update command is recommended. It will work even without an update, but the downloads will be slower.
+
+> Since version 1.10.0 a new naming scheme has been adopted, reflecting the official slug values from GOG itself
+> which should make this tool better integrated with other 3rd-party tools. You can continue using the old format
+> but if you wish to migrate to the new one, you can use the [migrate-naming-scheme](#migrate-naming-scheme) command.
+
+> Important: Version 1.6.0 uses a new database format. All newer versions will migrate your existing data
+> but it's not possible to go back from 1.6.0 to a previous version.
 
 ## Features
 
