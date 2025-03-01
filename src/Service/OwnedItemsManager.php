@@ -125,20 +125,12 @@ final class OwnedItemsManager
         } while ($query['page'] <= $data['totalPages']);
     }
 
-    public function getGameInfoByTitle(string $title): ?GameInfo
+    public function getGameDetailByTitle(string $title): ?GameDetail
     {
-        foreach ($this->getLocalGameData() as $gameDetail) {
-            if ($gameDetail->title === $title) {
-                return $this->serializer->deserialize([
-                    'id' => $gameDetail->id,
-                    'title' => $gameDetail->title,
-                    'updates' => false,
-                    'isNew' => false,
-                ], GameInfo::class);
-            }
-        }
-
-        return null;
+        return array_find(
+            $this->getLocalGameData(),
+            fn ($gameDetail) => $gameDetail->title === $title,
+        );
     }
 
     public function getItemDetail(OwnedItemInfo $item, int $httpTimeout = 3, bool $cached = true)
