@@ -5,6 +5,9 @@ namespace App\Service\Persistence;
 use App\DTO\Authorization;
 use App\DTO\GameDetail;
 use App\Enum\Setting;
+use Error;
+use ReflectionObject;
+use Stringable;
 
 final class PersistenceManagerFiles extends AbstractPersistenceManager
 {
@@ -35,7 +38,7 @@ final class PersistenceManagerFiles extends AbstractPersistenceManager
     {
         file_put_contents(
             $this->getFullPath(self::AUTH_FILE),
-            serialize($authorization),
+            $this->serialize($authorization),
         );
 
         return $this;
@@ -45,7 +48,7 @@ final class PersistenceManagerFiles extends AbstractPersistenceManager
     {
         file_put_contents(
             $this->getFullPath(self::GAME_FILE),
-            serialize($details),
+            $this->serialize($details),
         );
     }
 
@@ -114,5 +117,47 @@ final class PersistenceManagerFiles extends AbstractPersistenceManager
     public function needsMigrating(bool $excludeEmpty = false): bool
     {
         return false;
+    }
+
+    private function serialize(mixed $itemToSerialize): string
+    {
+        return serialize($this->normalize($itemToSerialize));
+    }
+
+    /**
+     * @template T of mixed
+     *
+     * @param T $itemToNormalize
+     * @return T
+     */
+    private function normalize(mixed $itemToNormalize): mixed
+    {
+        if (is_array($itemToNormalize)) {
+            foreach ($itemToNormalize as $key => $item) {
+                $itemToNormalize[$key] = $this->normalize($item);
+            }
+
+            return $itemToNormalize;
+        } else if (is_object($itemToNormalize)) {
+            $reflection = new ReflectionObject($itemToNormalize);
+            $copy = $reflection->newInstanceWithoutConstructor();
+            foreach ($reflection->getProperties() as $property) {
+                try {
+                    $currentValue = $property->getValue($itemToNormalize);
+                    if ($currentValue instanceof Stringable) {
+                        $currentValue = (string) $currentValue;
+                    } else if (is_array($currentValue)) {
+                        $currentValue = $this->normalize($currentValue);
+                    }
+                    $property->setValue($copy, $currentValue);
+                } catch (Error) {
+                    continue;
+                }
+            }
+
+            return $copy;
+        }
+
+        return $itemToNormalize;
     }
 }
