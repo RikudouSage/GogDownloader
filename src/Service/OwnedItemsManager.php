@@ -22,7 +22,9 @@ use Psr\Cache\CacheItemPoolInterface;
 use ReflectionException;
 use ReflectionProperty;
 use SimpleXMLElement;
+use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
@@ -181,6 +183,9 @@ final class OwnedItemsManager
         return $this->persistence->getLocalGameData() ?? [];
     }
 
+    /**
+     * @todo move this to deserialization (duplicate requests)
+     */
     public function getChecksum(DownloadDescription $download, GameDetail $game, int $httpTimeout = 3): ?string
     {
         $parts = explode('/', $download->url);
@@ -253,7 +258,7 @@ final class OwnedItemsManager
 
     private function getGameDetail(OwnedItemInfo $item, int $httpTimeout): GameDetail
     {
-        $response = $this->httpClient->request(
+        $ownedResponse = $this->httpClient->request(
             Request::METHOD_GET,
             new Url(
                 host: self::GOG_ACCOUNT_URL,
@@ -264,8 +269,37 @@ final class OwnedItemsManager
                 'timeout' => $httpTimeout,
             ]
         );
+        $ownedContent = json_decode($ownedResponse->getContent(), true);
+        $ownedDlcTitles = array_map(
+            fn (array $item) => $item['title'],
+            $ownedContent['dlcs'],
+        );
 
-        $detail = $this->serializer->deserialize($response->getContent(), GameDetail::class, [
+        $generalResponse = $this->httpClient->request(
+            Request::METHOD_GET,
+            new Url(
+                host: self::GOG_API_URL,
+                path: "products/{$item->id}",
+                query: [
+                    'expand' => implode(',', [
+                        'downloads',
+                        'expanded_dlcs',
+                    ])
+                ]
+            ),
+            [
+                'auth_bearer' => (string) $this->authorization->getAuthorization(),
+                'timeout' => $httpTimeout,
+            ]
+        );
+
+        $generalContent = json_decode($generalResponse->getContent(), true);
+        $generalContent['expanded_dlcs'] = array_filter(
+            $generalContent['expanded_dlcs'] ?? [],
+            fn (array $item) => in_array($item['title'], $ownedDlcTitles, true),
+        );
+
+        $detail = $this->serializer->deserialize($generalContent, GameDetail::class, [
             'id' => $item->getId(),
             'slug' => $item->getSlug(),
         ]);
@@ -301,13 +335,7 @@ final class OwnedItemsManager
 
     private function setMd5(DownloadDescription $download, GameDetail $game, int $httpTimeout)
     {
-        if ($download->gogGameId instanceof LatelyBoundStringValue) {
-            $md5 = new LatelyBoundStringValue(function () use ($download, $game, $httpTimeout): string {
-               return $this->getChecksum($download, $game, $httpTimeout) ?? '';
-            });
-        } else {
-            $md5 = $this->getChecksum($download, $game, $httpTimeout);
-        }
+        $md5 = $this->getChecksum($download, $game, $httpTimeout);
         if ($md5 === null) {
             $md5 = '';
         }

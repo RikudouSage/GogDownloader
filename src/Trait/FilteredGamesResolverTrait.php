@@ -114,7 +114,8 @@ trait FilteredGamesResolverTrait
                 $iterable,
                 fn (GameDetail $detail) => array_find(
                     $detail->downloads,
-                    fn (DownloadDescription $download) => $download->language === $excludeLanguage->getLocalName()
+                    fn (DownloadDescription $download)
+                        => $download->language === $excludeLanguage->value || $download->language === $excludeLanguage->getLocalName(),
                 ) === null,
             );
         }
@@ -122,17 +123,25 @@ trait FilteredGamesResolverTrait
         if ($englishFallback || $languages) {
             $iterable = Iterables::map(
                 function (GameDetail $game) use ($englishFallback, $languages) {
+                    $languageNames = array_map(
+                        fn (Language $language) => $language->getLocalName(),
+                        $languages,
+                    );
+                    $languageCodes = array_map(
+                        fn (Language $language) => $language->value,
+                        $languages,
+                    );
+
                     $downloads = array_filter(
                         $game->downloads,
-                        fn (DownloadDescription $download) => in_array($download->language, array_map(
-                            fn (Language $language) => $language->getLocalName(),
-                            $languages,
-                        ), true),
+                        fn (DownloadDescription $download)
+                            => in_array($download->language, $languageNames, true) || in_array($download->language, $languageCodes, true),
                     );
                     if (!count($downloads) && $englishFallback) {
                         $downloads = array_filter(
                             $game->downloads,
-                            fn (DownloadDescription $download) => $download->language === Language::English->getLocalName(),
+                            fn (DownloadDescription $download)
+                                => $download->language === Language::English->value || $download->language === Language::English->getLocalName(),
                         );
                     }
 
