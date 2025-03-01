@@ -1,4 +1,4 @@
-FROM php:8.3-alpine
+FROM php:8.4-alpine
 
 ENV CONFIG_DIRECTORY=/Configs
 ENV DOWNLOAD_DIRECTORY=/Downloads
