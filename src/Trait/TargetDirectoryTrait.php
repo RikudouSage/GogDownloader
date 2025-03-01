@@ -29,7 +29,9 @@ trait TargetDirectoryTrait
             }
         }
 
-        $namingScheme ??= NamingConvention::tryFrom($this->persistence->getSetting(Setting::NamingConvention)) ?? NamingConvention::GogSlug;
+        $namingScheme ??= NamingConvention::tryFrom(
+            $this->persistence->getSetting(Setting::NamingConvention) ?? '',
+        ) ?? NamingConvention::GogSlug;
 
         switch ($namingScheme) {
             case NamingConvention::GogSlug:
