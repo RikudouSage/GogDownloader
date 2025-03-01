@@ -47,7 +47,7 @@ final readonly class GameDetailNormalizer implements SerializerNormalizer
             if ($finalDownload->gogGameId) {
                 continue;
             }
-            $id = new LatelyBoundStringValue(function () use ($finalDownload): string {
+            $id = new LatelyBoundStringValue(function () use ($finalDownload): ?string {
                 return $this->downloadManager->getGameId($finalDownload);
             });
             try {
