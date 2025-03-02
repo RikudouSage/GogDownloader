@@ -2,7 +2,7 @@
 
 namespace App\DTO;
 
-final class GameExtra
+final class GameExtra implements DownloadableItem
 {
     public function __construct(
         public readonly int $id,

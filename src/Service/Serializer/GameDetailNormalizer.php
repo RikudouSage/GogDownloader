@@ -2,7 +2,7 @@
 
 namespace App\Service\Serializer;
 
-use App\DTO\DownloadDescription;
+use App\DTO\GameInstaller;
 use App\DTO\GameDetail;
 use App\DTO\GameExtra;
 use App\DTO\MultipleValuesWrapper;
@@ -14,7 +14,7 @@ final readonly class GameDetailNormalizer implements SerializerNormalizer
     {
         if (!isset($value['downloads']['installers'])) {
             $finalDownloads = array_map(
-                fn (array $download) => $serializer->deserialize($download, DownloadDescription::class),
+                fn (array $download) => $serializer->deserialize($download, GameInstaller::class),
                 $value['downloads'],
             );
         } else {
@@ -26,12 +26,12 @@ final readonly class GameDetailNormalizer implements SerializerNormalizer
             $downloads = [];
             foreach ($sourceDownloads as $download) {
                 $download['gogGameId'] = $context['id'];
-                $downloads[] = $serializer->deserialize($download, DownloadDescription::class);
+                $downloads[] = $serializer->deserialize($download, GameInstaller::class);
             }
             foreach ($value['expanded_dlcs'] ?? [] as $dlc) {
                 foreach ($dlc['downloads']['installers'] as $download) {
                     $download['gogGameId'] = $dlc['id'];
-                    $downloads[] = $serializer->deserialize($download, DownloadDescription::class);
+                    $downloads[] = $serializer->deserialize($download, GameInstaller::class);
                 }
             }
 

@@ -2,7 +2,7 @@
 
 namespace App\Trait;
 
-use App\DTO\DownloadDescription;
+use App\DTO\GameInstaller;
 use App\DTO\GameDetail;
 use App\DTO\OwnedItemInfo;
 use App\DTO\SearchFilter;
@@ -114,7 +114,7 @@ trait FilteredGamesResolverTrait
                 $iterable,
                 fn (GameDetail $detail) => array_find(
                     $detail->downloads,
-                    fn (DownloadDescription $download)
+                    fn (GameInstaller $download)
                         => $download->language === $excludeLanguage->value || $download->language === $excludeLanguage->getLocalName(),
                 ) === null,
             );
@@ -134,13 +134,13 @@ trait FilteredGamesResolverTrait
 
                     $downloads = array_filter(
                         $game->downloads,
-                        fn (DownloadDescription $download)
+                        fn (GameInstaller $download)
                             => in_array($download->language, $languageNames, true) || in_array($download->language, $languageCodes, true),
                     );
                     if (!count($downloads) && $englishFallback) {
                         $downloads = array_filter(
                             $game->downloads,
-                            fn (DownloadDescription $download)
+                            fn (GameInstaller $download)
                                 => $download->language === Language::English->value || $download->language === Language::English->getLocalName(),
                         );
                     }
@@ -163,7 +163,7 @@ trait FilteredGamesResolverTrait
                 function (GameDetail $game) use ($operatingSystems) {
                     $downloads = array_filter(
                         $game->downloads,
-                        fn (DownloadDescription $download) => in_array($download->platform, array_map(
+                        fn (GameInstaller $download) => in_array($download->platform, array_map(
                             fn (OperatingSystem $system) => $system->value,
                             $operatingSystems,
                         ))

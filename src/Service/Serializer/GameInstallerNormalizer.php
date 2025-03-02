@@ -2,25 +2,25 @@
 
 namespace App\Service\Serializer;
 
-use App\DTO\DownloadDescription;
+use App\DTO\GameInstaller;
 use App\DTO\MultipleValuesWrapper;
 use App\Service\Serializer;
 use ReflectionProperty;
 use RuntimeException;
 
-final class DownloadDescriptionNormalizer implements SerializerNormalizer
+final class GameInstallerNormalizer implements SerializerNormalizer
 {
     public function __construct(
     ) {
     }
 
-    public function normalize(array $value, array $context, Serializer $serializer): MultipleValuesWrapper|DownloadDescription
+    public function normalize(array $value, array $context, Serializer $serializer): MultipleValuesWrapper|GameInstaller
     {
         if (array_key_exists('version', $value)) {
             $results = [];
 
             foreach ($value['files'] as $file) {
-                $results[] = new DownloadDescription(
+                $results[] = new GameInstaller(
                     language: $value['language'],
                     platform: $value['os'],
                     name: $value['name'],
@@ -35,7 +35,7 @@ final class DownloadDescriptionNormalizer implements SerializerNormalizer
         }
 
         if (isset($value['game_id'])) {
-            return new DownloadDescription(
+            return new GameInstaller(
                 language: $value['language'],
                 platform: $value['platform'],
                 name: $value['name'],
@@ -51,6 +51,6 @@ final class DownloadDescriptionNormalizer implements SerializerNormalizer
 
     public function supports(string $class): bool
     {
-        return $class === DownloadDescription::class;
+        return $class === GameInstaller::class;
     }
 }

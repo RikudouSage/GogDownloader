@@ -2,7 +2,7 @@
 
 namespace App\Command;
 
-use App\DTO\DownloadDescription;
+use App\DTO\GameInstaller;
 use App\DTO\GameExtra;
 use App\Enum\Language;
 use App\Enum\NamingConvention;
@@ -181,10 +181,10 @@ final class DownloadCommand extends Command
                             $download,
                             $io,
                         ) {
-                            assert($download instanceof DownloadDescription || $download instanceof GameExtra);
+                            assert($download instanceof GameInstaller || $download instanceof GameExtra);
 
                             $downloadTag = new LatelyBoundStringValue(function () use ($download, $game) {
-                                if ($download instanceof DownloadDescription) {
+                                if ($download instanceof GameInstaller) {
                                     return "[{$game->title}] {$download->name} ({$download->platform}, {$download->language})";
                                 } else if ($download instanceof GameExtra) {
                                     return "[{$game->title}] {$download->name} (extra)";
