@@ -8,7 +8,8 @@ use JetBrains\PhpStorm\Deprecated;
 final readonly class GameDetail
 {
     /**
-     * @param  array<DownloadDescription> $downloads
+     * @param array<DownloadDescription> $downloads
+     * @param array<GameExtra> $extras
      */
     public function __construct(
         public int    $id,
@@ -18,6 +19,16 @@ final readonly class GameDetail
         #[ArrayType(type: DownloadDescription::class)]
         public array  $downloads,
         public string $slug,
+        public array $extras,
     ) {
+    }
+
+    public function __unserialize(array $data): void
+    {
+        $data['extras'] ??= [];
+
+        foreach ($data as $key => $value) {
+            $this->$key = $value;
+        }
     }
 }
