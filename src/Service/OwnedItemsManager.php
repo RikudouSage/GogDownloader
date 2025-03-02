@@ -133,7 +133,7 @@ final class OwnedItemsManager
         );
     }
 
-    public function getItemDetail(OwnedItemInfo $item, int $httpTimeout = 3, bool $cached = true)
+    public function getItemDetail(OwnedItemInfo $item, int $httpTimeout = 3, bool $cached = true): ?GameDetail
     {
         $cacheItem = $cached ? $this->cache->getItem("game_detail.{$item->getType()->value}.{$item->getId()}") : null;
         if ($cacheItem?->isHit()) {
@@ -248,7 +248,7 @@ final class OwnedItemsManager
         return null;
     }
 
-    private function getGameDetail(OwnedItemInfo $item, int $httpTimeout): GameDetail
+    private function getGameDetail(OwnedItemInfo $item, int $httpTimeout): ?GameDetail
     {
         $ownedResponse = $this->httpClient->request(
             Request::METHOD_GET,
@@ -262,6 +262,9 @@ final class OwnedItemsManager
             ]
         );
         $ownedContent = json_decode($ownedResponse->getContent(), true);
+        if (isset($ownedContent['isBaseProductMissing']) && $ownedContent['isBaseProductMissing']) {
+            return null;
+        }
         $ownedDlcTitles = array_map(
             fn (array $item) => $item['title'],
             $ownedContent['dlcs'],
@@ -303,7 +306,7 @@ final class OwnedItemsManager
         return $detail;
     }
 
-    private function getMovieDetail(OwnedItemInfo $item, int $httpTimeout)
+    private function getMovieDetail(OwnedItemInfo $item, int $httpTimeout): GameDetail
     {
         $response = $this->httpClient->request(
             Request::METHOD_GET,

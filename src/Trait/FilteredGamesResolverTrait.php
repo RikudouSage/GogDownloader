@@ -82,7 +82,7 @@ trait FilteredGamesResolverTrait
         );
 
         $iterable = $input->getOption('update')
-            ? Iterables::map(
+            ? Iterables::filter(Iterables::map(
                 function (OwnedItemInfo $info) use ($ownedItemsManager, $timeout, $output): GameDetail {
                     if ($output->isVerbose()) {
                         $output->writeln("Updating metadata for {$info->getTitle()}...");
@@ -91,7 +91,7 @@ trait FilteredGamesResolverTrait
                     return $ownedItemsManager->getItemDetail($info, $timeout);
                 },
                 $ownedItemsManager->getOwnedItems(MediaType::Game, $filter, httpTimeout: $timeout),
-            )
+            ))
             : $ownedItemsManager->getLocalGameData();
 
         if ($only) {
