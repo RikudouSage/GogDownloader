@@ -5,20 +5,10 @@ namespace App\Service\Serializer;
 use App\DTO\DownloadDescription;
 use App\DTO\GameDetail;
 use App\DTO\MultipleValuesWrapper;
-use App\Helper\LatelyBoundStringValue;
-use App\Service\DownloadManager;
 use App\Service\Serializer;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final readonly class GameDetailNormalizer implements SerializerNormalizer
 {
-    public function __construct(
-        private DownloadManager $downloadManager,
-    ) {
-    }
-
     public function normalize(array $value, array $context, Serializer $serializer): GameDetail
     {
         if (!isset($value['downloads']['installers'])) {
@@ -27,8 +17,13 @@ final readonly class GameDetailNormalizer implements SerializerNormalizer
                 $value['downloads'],
             );
         } else {
+            $sourceDownloads = [
+                ...$value['downloads']['installers'],
+                ...$value['downloads']['patches'],
+                ...$value['downloads']['language_packs'],
+            ];
             $downloads = [];
-            foreach ($value['downloads']['installers'] as $download) {
+            foreach ($sourceDownloads as $download) {
                 $download['gogGameId'] = $context['id'];
                 $downloads[] = $serializer->deserialize($download, DownloadDescription::class);
             }
