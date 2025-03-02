@@ -33,6 +33,9 @@ final class StreamWrapperFileReference
     {
         if ($this->fileHandle === null) {
             $mode = file_exists($this->path) ? 'a+' : 'w+';
+            if (!is_dir(dirname($this->path))) {
+                mkdir(dirname($this->path), 0777, true);
+            }
             $this->fileHandle = fopen($this->path, $mode);
         }
 

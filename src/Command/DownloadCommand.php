@@ -2,6 +2,8 @@
 
 namespace App\Command;
 
+use App\DTO\DownloadDescription;
+use App\DTO\GameExtra;
 use App\Enum\Language;
 use App\Enum\NamingConvention;
 use App\Enum\Setting;
@@ -9,6 +11,7 @@ use App\Exception\ExitException;
 use App\Exception\InvalidValueException;
 use App\Exception\TooManyRetriesException;
 use App\Exception\UnreadableFileException;
+use App\Helper\LatelyBoundStringValue;
 use App\Service\DownloadManager;
 use App\Service\FileWriter\FileWriterLocator;
 use App\Service\Iterables;
@@ -93,6 +96,27 @@ final class DownloadCommand extends Command
                 mode: InputOption::VALUE_REQUIRED,
                 description: 'Specify the maximum download speed in bytes. You can use the k postfix for kilobytes or m postfix for megabytes (for example 200k or 4m to mean 200 kilobytes and 4 megabytes respectively)',
             )
+            ->addOption(
+                name: 'extras',
+                shortcut: 'e',
+                mode: InputOption::VALUE_NONE,
+                description: 'Whether to include extras or not.',
+            )
+            ->addOption(
+                name: 'skip-existing-extras',
+                mode: InputOption::VALUE_NONE,
+                description: "Unlike games, extras generally don't have a hash that can be used to check whether the downloaded content is the same as the remote one, meaning by default extras will be downloaded every time, even if they exist. By providing this flag, you will skip existing extras."
+            )
+            ->addOption(
+                name: 'no-games',
+                mode: InputOption::VALUE_NONE,
+                description: 'Skip downloading games. Should be used with other options like --extras if you want to only download those.'
+            )
+            ->addOption(
+                name: 'skip-download',
+                mode: InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                description: 'Skip a download by its name, can be specified multiple times.'
+            )
         ;
     }
 
@@ -128,15 +152,25 @@ final class DownloadCommand extends Command
 
             $timeout = $input->getOption('idle-timeout');
             $noVerify = $input->getOption('no-verify');
+            $skipExistingExtras = $input->getOption('skip-existing-extras');
             $iterable = $this->getGames($input, $output, $this->ownedItemsManager);
+            $downloadsToSkip = $input->getOption('skip-download');
 
             $this->dispatchSignals();
             foreach ($iterable as $game) {
-                $downloads = $game->downloads;
+                $downloads = [];
+                if (!$input->getOption('no-games')) {
+                    $downloads = [...$downloads, ...$game->downloads];
+                }
+                if ($input->getOption('extras')) {
+                    $downloads = [...$downloads, ...$game->extras];
+                }
 
                 foreach ($downloads as $download) {
                     try {
                         $this->retryService->retry(function () use (
+                            $downloadsToSkip,
+                            $skipExistingExtras,
                             $chunkSize,
                             $timeout,
                             $noVerify,
@@ -147,6 +181,26 @@ final class DownloadCommand extends Command
                             $download,
                             $io,
                         ) {
+                            assert($download instanceof DownloadDescription || $download instanceof GameExtra);
+
+                            $downloadTag = new LatelyBoundStringValue(function () use ($download, $game) {
+                                if ($download instanceof DownloadDescription) {
+                                    return "[{$game->title}] {$download->name} ({$download->platform}, {$download->language})";
+                                } else if ($download instanceof GameExtra) {
+                                    return "[{$game->title}] {$download->name} (extra)";
+                                }
+
+                                throw new RuntimeException('Uncovered download type');
+                            });
+
+                            if (in_array($download->name, $downloadsToSkip, true)) {
+                                if ($output->isVerbose()) {
+                                    $io->writeln("{$downloadTag}: Skipping because it's specified using the --skip-download flag");
+                                }
+
+                                return;
+                            }
+
                             $this->canKillSafely = false;
                             $this->dispatchSignals();
                             $progress = $io->createProgressBar();
@@ -170,29 +224,47 @@ final class DownloadCommand extends Command
                             }
                             $filename = $this->downloadManager->getFilename($download, $timeout);
                             if (!$filename) {
-                                throw new RuntimeException("{$download->name} ({$download->platform}, {$download->language}): Failed getting the filename for {$download->name}");
+                                throw new RuntimeException("{$downloadTag}: Failed getting the filename for {$download->name}");
                             }
+
+                            if ($download instanceof GameExtra) {
+                                $filename = "extras/{$filename}";
+                            }
+
                             $targetFile = $writer->getFileReference("{$targetDir}/{$filename}");
 
                             $startAt = null;
-                            if (($download->md5 || $noVerify) && $writer->exists($targetFile)) {
+                            if (
+                                (
+                                    $download->md5
+                                    || $noVerify
+                                    || ($download instanceof GameExtra && $skipExistingExtras)
+                                )
+                                && $writer->exists($targetFile)
+                            ) {
                                 try {
                                     $md5 = $noVerify ? '' : $writer->getMd5Hash($targetFile);
                                 } catch (UnreadableFileException) {
-                                    $io->warning("{$download->name} ({$download->platform}, {$download->language}): Tried to get existing hash of {$download->name}, but the file is not readable. It will be downloaded again");
+                                    $io->warning("{$downloadTag}: Tried to get existing hash of {$download->name}, but the file is not readable. It will be downloaded again");
                                     $md5 = '';
                                 }
                                 if (!$noVerify && $download->md5 === $md5) {
                                     if ($output->isVerbose()) {
                                         $io->writeln(
-                                            "{$download->name} ({$download->platform}, {$download->language}): Skipping because it exists and is valid",
+                                            "{$downloadTag}: Skipping because it exists and is valid",
                                         );
+                                    }
+
+                                    return;
+                                } elseif ($download instanceof GameExtra && $skipExistingExtras) {
+                                    if ($output->isVerbose()) {
+                                        $io->writeln("{$downloadTag}: Skipping because it exists (--skip-existing-extras specified, not checking content)");
                                     }
 
                                     return;
                                 } elseif ($noVerify) {
                                     if ($output->isVerbose()) {
-                                        $io->writeln("{$download->name} ({$download->platform}, {$download->language}): Skipping because it exists (--no-verify specified, not checking content)");
+                                        $io->writeln("{$downloadTag}: Skipping because it exists (--no-verify specified, not checking content)");
                                     }
 
                                     return;
@@ -202,7 +274,7 @@ final class DownloadCommand extends Command
 
                             $progress->setMaxSteps(0);
                             $progress->setProgress(0);
-                            $progress->setMessage("{$download->name} ({$download->platform}, {$download->language})");
+                            $progress->setMessage($downloadTag);
 
                             $curlOptions = [];
                             if ($input->getOption('bandwidth') && defined('CURLOPT_MAX_RECV_SPEED_LARGE')) {
@@ -240,7 +312,7 @@ final class DownloadCommand extends Command
                             $writer->finalizeWriting($targetFile, $hash);
 
                             if (!$noVerify && $download->md5 && $download->md5 !== $hash) {
-                                $io->warning("{$download->name} ({$download->platform}, {$download->language}) failed hash check");
+                                $io->warning("{$downloadTag} failed hash check");
                             }
 
                             $progress->finish();

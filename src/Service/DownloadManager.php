@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\DTO\DownloadDescription;
+use App\DTO\GameExtra;
 use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,16 +20,19 @@ final class DownloadManager
     ) {
     }
 
-    public function getDownloadUrl(DownloadDescription $download): string
-    {
+    public function getDownloadUrl(
+        DownloadDescription|GameExtra $download
+    ): string {
         if (str_starts_with($download->url, '/')) {
             return self::BASE_URL . $download->url;
         }
         return $download->url;
     }
 
-    public function getFilename(DownloadDescription $download, int $httpTimeout = 3): ?string
-    {
+    public function getFilename(
+        DownloadDescription|GameExtra $download,
+        int $httpTimeout = 3
+    ): ?string {
         $url = $this->getRealDownloadUrl($download, $httpTimeout);
         if (!$url) {
             return null;
@@ -38,7 +42,7 @@ final class DownloadManager
     }
 
     public function download(
-        DownloadDescription $download,
+        DownloadDescription|GameExtra $download,
         callable $callback,
         ?int $startAt = null,
         int $httpTimeout = 3,
@@ -67,8 +71,10 @@ final class DownloadManager
         return $this->httpClient->stream($response);
     }
 
-    private function getRealDownloadUrl(DownloadDescription $download, int $httpTimeout = 3): ?string
-    {
+    private function getRealDownloadUrl(
+        DownloadDescription|GameExtra $download,
+        int $httpTimeout = 3
+    ): ?string {
         if (str_starts_with($download->url, '/')) {
             $response = $this->httpClient->request(
                 Request::METHOD_HEAD,

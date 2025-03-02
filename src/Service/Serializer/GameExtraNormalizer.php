@@ -19,6 +19,7 @@ final readonly class GameExtraNormalizer implements SerializerNormalizer
                     size: $file['size'],
                     url: $file['downlink'],
                     gogGameId: $value['gogGameId'],
+                    md5: null,
                 );
             }
 
@@ -31,6 +32,7 @@ final readonly class GameExtraNormalizer implements SerializerNormalizer
             size: $value['size'],
             url: $value['url'],
             gogGameId: $value['gog_game_id'],
+            md5: $value['md5'],
         );
     }
 
