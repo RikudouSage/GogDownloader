@@ -269,6 +269,10 @@ final class OwnedItemsManager
             fn (array $item) => $item['title'],
             $ownedContent['dlcs'],
         );
+        $ownedExtrasTitles = array_map(
+            fn (array $item) => $item['name'],
+            $ownedContent['extras'],
+        );
 
         $generalResponse = $this->httpClient->request(
             Request::METHOD_GET,
@@ -292,6 +296,10 @@ final class OwnedItemsManager
         $generalContent['expanded_dlcs'] = array_filter(
             $generalContent['expanded_dlcs'] ?? [],
             fn (array $item) => in_array($item['title'], $ownedDlcTitles, true),
+        );
+        $generalContent['downloads']['bonus_content'] = array_filter(
+            $generalContent['downloads']['bonus_content'] ?? [],
+            fn (array $item) => in_array($item['name'], $ownedExtrasTitles, true),
         );
 
         $detail = $this->serializer->deserialize($generalContent, GameDetail::class, [

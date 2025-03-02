@@ -4,6 +4,7 @@ namespace App\Service\Serializer;
 
 use App\DTO\DownloadDescription;
 use App\DTO\GameDetail;
+use App\DTO\GameExtra;
 use App\DTO\MultipleValuesWrapper;
 use App\Service\Serializer;
 
@@ -44,12 +45,29 @@ final readonly class GameDetailNormalizer implements SerializerNormalizer
             }
         }
 
+        $extras = [];
+        foreach ($value['extras'] ?? $value['downloads']['bonus_content'] ?? [] as $extra) {
+            $extra['gogGameId'] ??= $value['id'] ?? $context['id'];
+            $extras[] = $serializer->deserialize($extra, GameExtra::class);
+        }
+
+        $finalExtras = [];
+        foreach ($extras as $key => $extra) {
+            if ($extra instanceof MultipleValuesWrapper) {
+                unset($extras[$key]);
+                $finalExtras = [...$finalExtras, ...$extra];
+            } else {
+                $finalExtras[] = $extra;
+            }
+        }
+
         return new GameDetail(
             id: $value['id'] ?? $context['id'],
             title: $value['title'],
             cdKey: '', // todo
             downloads: $finalDownloads,
             slug: $value['slug'] ?? $context['slug'],
+            extras: $finalExtras,
         );
     }
 

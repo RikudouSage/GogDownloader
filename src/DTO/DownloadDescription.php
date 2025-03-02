@@ -19,4 +19,15 @@ final class DownloadDescription
             $this->md5 = $md5;
         }
     }
+
+    public function __unserialize(array $data): void
+    {
+        if (is_string($data['gogGameId'])) {
+            $data['gogGameId'] = (int) $data['gogGameId'];
+        }
+
+        foreach ($data as $key => $value) {
+            $this->$key = $value;
+        }
+    }
 }

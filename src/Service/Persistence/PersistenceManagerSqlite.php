@@ -96,12 +96,17 @@ final class PersistenceManagerSqlite extends AbstractPersistenceManager
             $downloadsQuery->execute([$next['id']]);
             $downloads = $downloadsQuery->fetchAll(PDO::FETCH_ASSOC);
 
+            $extrasQuery = $pdo->prepare('select * from game_extras where game_id = ?');
+            $extrasQuery->execute([$next['id']]);
+            $extras = $extrasQuery->fetchAll(PDO::FETCH_ASSOC);
+
             $result[] = $this->serializer->deserialize([
                 'id' => $next['game_id'],
                 'title' => $next['title'],
                 'cdKey' => $next['cd_key'] ?? '',
                 'downloads' => $downloads,
                 'slug' => $next['slug'] ?? '',
+                'extras' => $extras,
             ], GameDetail::class);
         }
 
@@ -143,6 +148,23 @@ final class PersistenceManagerSqlite extends AbstractPersistenceManager
                 $download->md5,
                 $id,
                 $download->gogGameId,
+            ]);
+        }
+        foreach ($detail->extras as $extra) {
+            $pdo->prepare('insert into game_extras (extra_id, name, size, url, gog_game_id, game_id)
+                                 values (?, ?, ?, ?, ?, ?)
+                                 on conflict (extra_id) do update set name        = excluded.name,
+                                                                      size        = excluded.size,
+                                                                      url         = excluded.url,
+                                                                      gog_game_id = excluded.gog_game_id,
+                                                                      game_id     = excluded.game_id
+            ')->execute([
+                $extra->id,
+                $extra->name,
+                $extra->size,
+                $extra->url,
+                $extra->gogGameId,
+                $id,
             ]);
         }
     }
