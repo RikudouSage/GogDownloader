@@ -2,7 +2,7 @@
 
 namespace App\DTO;
 
-final class GameInstaller
+final class GameInstaller implements DownloadableItem
 {
     public function __construct(
         public readonly string $language,

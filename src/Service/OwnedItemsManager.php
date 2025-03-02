@@ -2,9 +2,8 @@
 
 namespace App\Service;
 
-use App\DTO\GameInstaller;
+use App\DTO\DownloadableItem;
 use App\DTO\GameDetail;
-use App\DTO\GameExtra;
 use App\DTO\GameInfo;
 use App\DTO\MovieInfo;
 use App\DTO\OwnedItemInfo;
@@ -14,7 +13,6 @@ use App\Enum\Language;
 use App\Enum\MediaType;
 use App\Enum\OperatingSystem;
 use App\Exception\AuthorizationException;
-use App\Helper\LatelyBoundStringValue;
 use App\Service\Persistence\PersistenceManager;
 use DateInterval;
 use Exception;
@@ -23,9 +21,7 @@ use Psr\Cache\CacheItemPoolInterface;
 use ReflectionException;
 use ReflectionProperty;
 use SimpleXMLElement;
-use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
@@ -179,7 +175,7 @@ final class OwnedItemsManager
     /**
      * @todo move this to deserialization (duplicate requests)
      */
-    public function getChecksum(GameInstaller|GameExtra $download, GameDetail $game, int $httpTimeout = 3): ?string
+    public function getChecksum(DownloadableItem $download, GameDetail $game, int $httpTimeout = 3): ?string
     {
         $parts = explode('/', $download->url);
         $id = $parts[array_key_last($parts)];
@@ -340,7 +336,7 @@ final class OwnedItemsManager
         return $detail;
     }
 
-    private function setMd5(GameInstaller|GameExtra $download, GameDetail $game, int $httpTimeout)
+    private function setMd5(DownloadableItem $download, GameDetail $game, int $httpTimeout)
     {
         $md5 = $this->getChecksum($download, $game, $httpTimeout);
         if ($md5 === null) {
