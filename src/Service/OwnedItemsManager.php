@@ -175,11 +175,11 @@ final class OwnedItemsManager
     /**
      * @todo move this to deserialization (duplicate requests)
      */
-    public function getChecksum(DownloadableItem $download, GameDetail $game, int $httpTimeout = 3): ?string
+    public function getChecksum(DownloadableItem $download, ?GameDetail $game, int $httpTimeout = 3): ?string
     {
         $parts = explode('/', $download->url);
         $id = $parts[array_key_last($parts)];
-        $gameId = $download->gogGameId ?? $game->id;
+        $gameId = $download->gogGameId ?? $game?->id;
 
         $response = $this->httpClient->request(
             Request::METHOD_GET,
@@ -336,8 +336,11 @@ final class OwnedItemsManager
         return $detail;
     }
 
-    private function setMd5(DownloadableItem $download, GameDetail $game, int $httpTimeout)
+    private function setMd5(DownloadableItem $download, GameDetail $game, int $httpTimeout): void
     {
+        if ($download->md5 !== null) {
+            return;
+        }
         $md5 = $this->getChecksum($download, $game, $httpTimeout);
         if ($md5 === null) {
             $md5 = '';
