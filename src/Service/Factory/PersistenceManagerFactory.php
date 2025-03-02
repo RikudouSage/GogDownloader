@@ -20,9 +20,9 @@ final readonly class PersistenceManagerFactory
 
     public function getPersistenceManager(): PersistenceManager
     {
-//        if (class_exists(PDO::class, false) && class_exists(SQLite3::class, false)) {
-//            return new PersistenceManagerSqlite($this->migrationManager, $this->serializer);
-//        }
+        if (class_exists(PDO::class, false) && class_exists(SQLite3::class, false)) {
+            return new PersistenceManagerSqlite($this->migrationManager, $this->serializer);
+        }
 
         return new PersistenceManagerFiles();
     }
