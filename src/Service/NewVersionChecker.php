@@ -5,6 +5,10 @@ namespace App\Service;
 use Symfony\Component\Console\Application;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final class NewVersionChecker
@@ -38,14 +42,18 @@ final class NewVersionChecker
         }
 
         $url = "{$this->repository}/releases/latest";
-        $response = $this->httpClient->request(
-            Request::METHOD_HEAD,
-            $url,
-            [
-                'max_redirects' => 0,
-            ],
-        );
-        $location = $response->getHeaders(false)['location'][0] ?? null;
+        try {
+            $response = $this->httpClient->request(
+                Request::METHOD_HEAD,
+                $url,
+                [
+                    'max_redirects' => 0,
+                ],
+            );
+            $location = $response->getHeaders(false)['location'][0] ?? null;
+        } catch (TransportExceptionInterface|ClientExceptionInterface|RedirectionExceptionInterface|ServerExceptionInterface) {
+            return '0.0.0';
+        }
         $parts = explode('/', $location);
         $last = $parts[array_key_last($parts)];
 
