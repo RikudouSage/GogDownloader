@@ -166,6 +166,30 @@ So to download only games that support Czech either in-game or as a separate dow
 > Tip: If you want to see how much space you need for your games, replace the `download` command with `total-size`,
 > it includes most of the same parameters.
 
+### Downloading extras
+
+Extras can be downloaded simply by adding `--extras` flag to the above command:
+
+- `gog-downloader download --extras`
+
+This will download both games and extras. If you wish to download only extras, you can add the `--no-games` flag:
+
+- `gog-downloader download --extras --no-games`
+
+Because extras generally don't contain a hash that can be used to check the validity of the downloaded content,
+the extras will be downloaded every time. You can use the already mentioned `--no-verify` flag, but that will also
+skip verifying games. If you want to only skip downloading existing extras, you can use the `--skip-existing-extras`
+flag.
+
+If, for some reason, you want to skip any download, you can exclude it by name using `--skip-download`:
+
+- `gog-downloader download --extras --no-games --skip-existing-extras --skip-download "Cyberpunk 2077 Legacy 1.63"`
+
+This will skip the extra called *Cyberpunk 2077 Legacy 1.63*.
+
+> Tip: Use the `-v` flag to print information about skipped games, by default they're skipped silently to not clutter 
+> the output.
+
 ### Downloading saves
 
 To download cloud saves you can use the `download-saves` command: `gog-downloader download-saves` (or the shorthand

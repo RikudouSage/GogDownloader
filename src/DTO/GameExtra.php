@@ -2,14 +2,15 @@
 
 namespace App\DTO;
 
-final readonly class GameExtra
+final class GameExtra
 {
     public function __construct(
-        public int $id,
-        public string $name,
-        public int $size,
-        public string $url,
-        public int $gogGameId,
+        public readonly int $id,
+        public readonly string $name,
+        public readonly int $size,
+        public readonly string $url,
+        public readonly int $gogGameId,
+        public private(set) ?string $md5,
     ) {
     }
 }

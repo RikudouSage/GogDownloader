@@ -151,13 +151,14 @@ final class PersistenceManagerSqlite extends AbstractPersistenceManager
             ]);
         }
         foreach ($detail->extras as $extra) {
-            $pdo->prepare('insert into game_extras (extra_id, name, size, url, gog_game_id, game_id)
-                                 values (?, ?, ?, ?, ?, ?)
+            $pdo->prepare('insert into game_extras (extra_id, name, size, url, gog_game_id, game_id, md5)
+                                 values (?, ?, ?, ?, ?, ?, ?)
                                  on conflict (extra_id) do update set name        = excluded.name,
                                                                       size        = excluded.size,
                                                                       url         = excluded.url,
                                                                       gog_game_id = excluded.gog_game_id,
-                                                                      game_id     = excluded.game_id
+                                                                      game_id     = excluded.game_id,
+                                                                      md5         = excluded.md5
             ')->execute([
                 $extra->id,
                 $extra->name,
@@ -165,6 +166,7 @@ final class PersistenceManagerSqlite extends AbstractPersistenceManager
                 $extra->url,
                 $extra->gogGameId,
                 $id,
+                $extra->md5,
             ]);
         }
     }

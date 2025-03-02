@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Exception\TooManyRetriesException;
+use Exception;
 use Throwable;
 
 final readonly class RetryService
@@ -14,7 +15,7 @@ final readonly class RetryService
 
     /**
      * @throws TooManyRetriesException
-     * @throws Throwable
+     * @throws Exception
      */
     public function retry(callable $callable, int $maxRetries, int $retryDelay, ?array $exceptions = null, ?array $ignoreExceptions = null): void
     {
@@ -25,7 +26,7 @@ final readonly class RetryService
                 $callable();
 
                 return;
-            } catch (Throwable $e) {
+            } catch (Exception $e) {
                 if ($this->debug) {
                     $thrown[] = $e;
                 }
