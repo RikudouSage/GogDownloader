@@ -5,6 +5,7 @@ parameters:
   debug_mode: '%env(default:default_debug_value:bool:GOG_DOWNLOADER_DEBUG)%'
   gog.client_id: 46899977096215655
   app.user_agent: 'RikudouSage/GogDownloader'
+  app.source_repository: https://github.com/RikudouSage/GogDownloader
 
 services:
   _defaults:

@@ -19,7 +19,8 @@
         "aws/aws-sdk-php": "^3.320",
         "symfony/polyfill-php84": "^1.30",
         "ext-zlib": "*",
-        "rikudou/iterables": "^1.3"
+        "rikudou/iterables": "^1.3",
+        "symfony/event-dispatcher": "^6.0"
     },
     "autoload": {
         "psr-4": {
