@@ -3,7 +3,9 @@
 namespace App\Service;
 
 use App\DTO\DownloadDescription;
+use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseStreamInterface;
 
@@ -19,7 +21,10 @@ final class DownloadManager
 
     public function getDownloadUrl(DownloadDescription $download): string
     {
-        return self::BASE_URL . $download->url;
+        if (str_starts_with($download->url, '/')) {
+            return self::BASE_URL . $download->url;
+        }
+        return $download->url;
     }
 
     public function getFilename(DownloadDescription $download, int $httpTimeout = 3): ?string
@@ -32,26 +37,6 @@ final class DownloadManager
         return urldecode(pathinfo($url, PATHINFO_BASENAME));
     }
 
-    public function getGameId(DownloadDescription $downloadDescription, int $httpTimeout = 3): ?int
-    {
-        if ($downloadDescription->gogGameId) {
-            return $downloadDescription->gogGameId;
-        }
-
-        $url = $this->getRealDownloadUrl($downloadDescription, $httpTimeout);
-        if (!$url) {
-            return null;
-        }
-
-        $parts = explode('/', $url);
-        $index = array_search('offline', $parts);
-        if (!$index) {
-            return null;
-        }
-
-        return $parts[$index + 2] ?? null;
-    }
-
     public function download(
         DownloadDescription $download,
         callable $callback,
@@ -59,16 +44,7 @@ final class DownloadManager
         int $httpTimeout = 3,
         array $curlOptions = [],
     ): ResponseStreamInterface {
-        $response = $this->httpClient->request(
-            Request::METHOD_GET,
-            $this->getDownloadUrl($download),
-            [
-                'auth_bearer' => (string) $this->authentication->getAuthorization(),
-                'max_redirects' => 0,
-                'timeout' => $httpTimeout,
-            ]
-        );
-        $url = $response->getHeaders(false)['location'][0];
+        $url = $this->getRealDownloadUrl($download, $httpTimeout);
 
         $headers = [];
         if ($startAt !== null) {
@@ -93,8 +69,22 @@ final class DownloadManager
 
     private function getRealDownloadUrl(DownloadDescription $download, int $httpTimeout = 3): ?string
     {
+        if (str_starts_with($download->url, '/')) {
+            $response = $this->httpClient->request(
+                Request::METHOD_HEAD,
+                $this->getDownloadUrl($download),
+                [
+                    'auth_bearer' => (string) $this->authentication->getAuthorization(),
+                    'max_redirects' => 0,
+                    'timeout' => $httpTimeout,
+                ]
+            );
+
+            return $response->getHeaders(false)['location'][0] ?? null;
+        }
+
         $response = $this->httpClient->request(
-            Request::METHOD_HEAD,
+            Request::METHOD_GET,
             $this->getDownloadUrl($download),
             [
                 'auth_bearer' => (string) $this->authentication->getAuthorization(),
@@ -102,6 +92,16 @@ final class DownloadManager
                 'timeout' => $httpTimeout,
             ]
         );
-        return $response->getHeaders(false)['location'][0] ?? null;
+        try {
+            $content = json_decode($response->getContent(), true);
+        } catch (ClientException $e) {
+            if ($e->getResponse()->getStatusCode() !== Response::HTTP_NOT_FOUND) {
+                throw $e;
+            }
+
+            return null;
+        }
+
+        return $content['downlink'] ?? null;
     }
 }

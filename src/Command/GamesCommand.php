@@ -60,15 +60,12 @@ final class GamesCommand extends Command
                 return Command::SUCCESS;
             }
 
-            $info = $this->ownedItemsManager->getGameInfoByTitle($gameName);
-            if ($info === null) {
+            $detail = $this->ownedItemsManager->getGameDetailByTitle($gameName);
+            if ($detail === null) {
                 $io->error("Could not find a game with title '{$gameName}' in your local database. Perhaps try running the update command first?");
 
                 return Command::FAILURE;
             }
-
-            $io->note('Fetching game data, this could take a while unless the data are cached.');
-            $detail = $this->ownedItemsManager->getItemDetail($info);
 
             $io->table([
                 'ID', 'Title',
@@ -88,6 +85,10 @@ final class GamesCommand extends Command
                     $download->md5,
                     $this->downloadManager->getDownloadUrl($download),
                 ];
+            }
+
+            if (!count($rows)) {
+                $io->warning("The game does not contain any files to download. Perhaps try running the update command first?");
             }
 
             $io->table($headers, $rows);

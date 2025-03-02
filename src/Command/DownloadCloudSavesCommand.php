@@ -9,12 +9,12 @@ use App\Enum\NamingConvention;
 use App\Enum\Setting;
 use App\Service\CloudSavesManager;
 use App\Service\FileWriter\FileWriterLocator;
-use App\Service\Iterables;
 use App\Service\OwnedItemsManager;
 use App\Service\Persistence\PersistenceManager;
 use App\Service\RetryService;
 use App\Trait\MigrationCheckerTrait;
 use App\Trait\TargetDirectoryTrait;
+use Rikudou\Iterables\Iterables;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -35,7 +35,6 @@ final class DownloadCloudSavesCommand extends Command
         private readonly CloudSavesManager $cloudSaves,
         private readonly PersistenceManager $persistence,
         private readonly OwnedItemsManager $ownedItemsManager,
-        private readonly Iterables $iterables,
         private readonly RetryService $retryService,
         private readonly FileWriterLocator $writerLocator,
         private readonly HttpClientInterface $httpClient,
@@ -110,8 +109,7 @@ final class DownloadCloudSavesCommand extends Command
         $timeout = $input->getOption('idle-timeout');
 
         $games = $input->getOption('update')
-            ? $this->iterables->map(
-                $this->ownedItemsManager->getOwnedItems(MediaType::Game, httpTimeout: $timeout),
+            ? Iterables::filter(Iterables::map(
                 function (OwnedItemInfo $info) use ($timeout, $output): GameDetail {
                     if ($output->isVerbose()) {
                         $output->writeln("Updating metadata for {$info->getTitle()}...");
@@ -119,7 +117,8 @@ final class DownloadCloudSavesCommand extends Command
 
                     return $this->ownedItemsManager->getItemDetail($info, $timeout);
                 },
-            )
+                $this->ownedItemsManager->getOwnedItems(MediaType::Game, httpTimeout: $timeout),
+            ))
             : $this->ownedItemsManager->getLocalGameData();
 
         foreach ($games as $game) {

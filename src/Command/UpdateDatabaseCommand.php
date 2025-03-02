@@ -207,9 +207,10 @@ final class UpdateDatabaseCommand extends Command
                             $progressBar->advance();
                         }
                         $progressBar->setMessage($item->getTitle());
-                        $this->ownedItemsManager->storeSingleGameData(
-                            $this->ownedItemsManager->getItemDetail($item, cached: false),
-                        );
+                        $detail = $this->ownedItemsManager->getItemDetail($item, cached: false);
+                        if ($detail !== null) {
+                            $this->ownedItemsManager->storeSingleGameData($detail);
+                        }
                         $progressBar->advance();
                     }, $input->getOption('retry'), $input->getOption('retry-delay'));
                 } catch (TooManyRetriesException $e) {
