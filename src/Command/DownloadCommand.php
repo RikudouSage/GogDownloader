@@ -217,7 +217,7 @@ final class DownloadCommand extends Command
                             $format = ' %bytes_current% / %bytes_total% [%bar%] %percent:3s%% - %message%';
                             $progress->setFormat($format);
 
-                            $targetDir = $this->getTargetDir($input, $game);
+                            $targetDir = $this->getTargetDir($input, $game, download: $download);
                             $writer = $this->writerLocator->getWriter($targetDir);
                             if (!$writer->exists($targetDir)) {
                                 $writer->createDirectory($targetDir);
