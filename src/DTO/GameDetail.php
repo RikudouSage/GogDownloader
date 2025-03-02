@@ -8,7 +8,7 @@ use JetBrains\PhpStorm\Deprecated;
 final readonly class GameDetail
 {
     /**
-     * @param array<DownloadDescription> $downloads
+     * @param array<GameInstaller> $downloads
      * @param array<GameExtra> $extras
      */
     public function __construct(
@@ -16,7 +16,7 @@ final readonly class GameDetail
         public string $title,
         #[Deprecated]
         public string $cdKey,
-        #[ArrayType(type: DownloadDescription::class)]
+        #[ArrayType(type: GameInstaller::class)]
         public array  $downloads,
         public string $slug,
         public array $extras,

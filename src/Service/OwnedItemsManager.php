@@ -2,7 +2,7 @@
 
 namespace App\Service;
 
-use App\DTO\DownloadDescription;
+use App\DTO\GameInstaller;
 use App\DTO\GameDetail;
 use App\DTO\GameExtra;
 use App\DTO\GameInfo;
@@ -179,7 +179,7 @@ final class OwnedItemsManager
     /**
      * @todo move this to deserialization (duplicate requests)
      */
-    public function getChecksum(DownloadDescription|GameExtra $download, GameDetail $game, int $httpTimeout = 3): ?string
+    public function getChecksum(GameInstaller|GameExtra $download, GameDetail $game, int $httpTimeout = 3): ?string
     {
         $parts = explode('/', $download->url);
         $id = $parts[array_key_last($parts)];
@@ -340,7 +340,7 @@ final class OwnedItemsManager
         return $detail;
     }
 
-    private function setMd5(DownloadDescription|GameExtra $download, GameDetail $game, int $httpTimeout)
+    private function setMd5(GameInstaller|GameExtra $download, GameDetail $game, int $httpTimeout)
     {
         $md5 = $this->getChecksum($download, $game, $httpTimeout);
         if ($md5 === null) {
