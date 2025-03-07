@@ -323,7 +323,10 @@ final class DownloadCommand extends Command
                         ]);
                     } catch (TooManyRetriesException $e) {
                         if (!$input->getOption('skip-errors')) {
-                            throw $e;
+                            if (!count($e->exceptions)) {
+                                throw $e;
+                            }
+                            throw $e->exceptions[array_key_last($e->exceptions)];
                         }
                         $io->note("{$download->name} couldn't be downloaded");
                     }

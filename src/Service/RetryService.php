@@ -27,9 +27,7 @@ final readonly class RetryService
 
                 return;
             } catch (Exception $e) {
-                if ($this->debug) {
-                    $thrown[] = $e;
-                }
+                $thrown[] = $e;
                 ++$retries;
                 if (!$this->matches($e, $exceptions)) {
                     throw $e;
@@ -45,7 +43,7 @@ final readonly class RetryService
             throw $thrown[array_key_last($thrown)];
         }
 
-        throw new TooManyRetriesException('The operation has been retried too many times, cancelling');
+        throw new TooManyRetriesException($thrown, 'The operation has been retried too many times, cancelling');
     }
 
     /**
