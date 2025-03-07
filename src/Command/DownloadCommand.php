@@ -8,6 +8,7 @@ use App\Enum\Language;
 use App\Enum\NamingConvention;
 use App\Enum\Setting;
 use App\Exception\ExitException;
+use App\Exception\ForceRetryException;
 use App\Exception\InvalidValueException;
 use App\Exception\TooManyRetriesException;
 use App\Exception\UnreadableFileException;
@@ -33,6 +34,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\HttpClient\Exception\ClientException;
+use Symfony\Component\HttpFoundation\Response;
 
 #[AsCommand('download')]
 final class DownloadCommand extends Command
@@ -303,10 +306,19 @@ final class DownloadCommand extends Command
                             } catch (UnreadableFileException) {
                                 $hash = hash_init('md5');
                             }
-                            foreach ($responses as $response) {
-                                $chunk = $response->getContent();
-                                $writer->writeChunk($targetFile, $chunk, $chunkSize);
-                                hash_update($hash, $chunk);
+                            try {
+                                foreach ($responses as $response) {
+                                    $chunk = $response->getContent();
+                                    $writer->writeChunk($targetFile, $chunk, $chunkSize);
+                                    hash_update($hash, $chunk);
+                                }
+                            } catch (ClientException $e) {
+                                if ($e->getCode() === Response::HTTP_REQUESTED_RANGE_NOT_SATISFIABLE) {
+                                    $writer->remove($targetFile);
+                                    throw new ForceRetryException();
+                                }
+
+                                throw $e;
                             }
                             $hash = hash_final($hash);
                             $writer->finalizeWriting($targetFile, $hash);

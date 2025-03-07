@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Exception\ForceRetryException;
 use App\Exception\TooManyRetriesException;
 use Exception;
 use Throwable;
@@ -27,13 +28,15 @@ final readonly class RetryService
 
                 return;
             } catch (Exception $e) {
-                $thrown[] = $e;
-                ++$retries;
-                if (!$this->matches($e, $exceptions)) {
-                    throw $e;
-                }
-                if ($ignoreExceptions && $this->matches($e, $ignoreExceptions)) {
-                    throw $e;
+                if (!$e instanceof ForceRetryException) {
+                    $thrown[] = $e;
+                    ++$retries;
+                    if (!$this->matches($e, $exceptions)) {
+                        throw $e;
+                    }
+                    if ($ignoreExceptions && $this->matches($e, $ignoreExceptions)) {
+                        throw $e;
+                    }
                 }
                 sleep($retryDelay);
             }
