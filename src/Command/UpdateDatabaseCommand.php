@@ -215,7 +215,10 @@ final class UpdateDatabaseCommand extends Command
                     }, $input->getOption('retry'), $input->getOption('retry-delay'));
                 } catch (TooManyRetriesException $e) {
                     if (!$input->getOption('skip-errors')) {
-                        throw $e;
+                        if (!count($e->exceptions)) {
+                            throw $e;
+                        }
+                        throw $e->exceptions[array_key_last($e->exceptions)];
                     }
                     $io->note("{$item->getTitle()} couldn't be downloaded");
                 }
