@@ -4,7 +4,7 @@ namespace App\Exception;
 
 use RuntimeException;
 
-final class ForceRetryException extends RuntimeException implements RetryAwareException
+final class RetryDownloadForUnmatchingHashException extends RuntimeException implements RetryAwareException
 {
     public function modifyTryNumber(int $tryNumber): int
     {
@@ -13,6 +13,6 @@ final class ForceRetryException extends RuntimeException implements RetryAwareEx
 
     public function modifyDelay(int $delay): int
     {
-        return 0;
+        return $delay;
     }
 }
