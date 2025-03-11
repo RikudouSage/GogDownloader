@@ -8,7 +8,9 @@ use App\Enum\Language;
 use App\Enum\NamingConvention;
 use App\Enum\Setting;
 use App\Exception\ExitException;
+use App\Exception\ForceRetryException;
 use App\Exception\InvalidValueException;
+use App\Exception\RetryDownloadForUnmatchingHashException;
 use App\Exception\TooManyRetriesException;
 use App\Exception\UnreadableFileException;
 use App\Helper\LatelyBoundStringValue;
@@ -33,6 +35,9 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\HttpClient\Exception\ClientException;
+use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 #[AsCommand('download')]
 final class DownloadCommand extends Command
@@ -117,6 +122,11 @@ final class DownloadCommand extends Command
                 mode: InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
                 description: 'Skip a download by its name, can be specified multiple times.'
             )
+            ->addOption(
+                name: 'remove-invalid',
+                mode: InputOption::VALUE_NONE,
+                description: 'Remove downloaded files that failed hash check and try downloading it again.'
+            )
         ;
     }
 
@@ -155,6 +165,7 @@ final class DownloadCommand extends Command
             $skipExistingExtras = $input->getOption('skip-existing-extras');
             $iterable = $this->getGames($input, $output, $this->ownedItemsManager);
             $downloadsToSkip = $input->getOption('skip-download');
+            $removeInvalid = $input->getOption('remove-invalid');
 
             $this->dispatchSignals();
             foreach ($iterable as $game) {
@@ -168,7 +179,8 @@ final class DownloadCommand extends Command
 
                 foreach ($downloads as $download) {
                     try {
-                        $this->retryService->retry(function () use (
+                        $this->retryService->retry(function (?Throwable $retryReason) use (
+                            $removeInvalid,
                             $downloadsToSkip,
                             $skipExistingExtras,
                             $chunkSize,
@@ -303,16 +315,33 @@ final class DownloadCommand extends Command
                             } catch (UnreadableFileException) {
                                 $hash = hash_init('md5');
                             }
-                            foreach ($responses as $response) {
-                                $chunk = $response->getContent();
-                                $writer->writeChunk($targetFile, $chunk, $chunkSize);
-                                hash_update($hash, $chunk);
+                            try {
+                                foreach ($responses as $response) {
+                                    $chunk = $response->getContent();
+                                    $writer->writeChunk($targetFile, $chunk, $chunkSize);
+                                    hash_update($hash, $chunk);
+                                }
+                            } catch (ClientException $e) {
+                                if ($e->getCode() === Response::HTTP_REQUESTED_RANGE_NOT_SATISFIABLE) {
+                                    $writer->remove($targetFile);
+                                    throw new ForceRetryException();
+                                }
+
+                                throw $e;
                             }
                             $hash = hash_final($hash);
                             $writer->finalizeWriting($targetFile, $hash);
 
                             if (!$noVerify && $download->md5 && $download->md5 !== $hash) {
-                                $io->warning("{$downloadTag} failed hash check");
+                                if ($removeInvalid && !$retryReason instanceof RetryDownloadForUnmatchingHashException) {
+                                    $io->warning("{$downloadTag} failed hash check. The file will be removed and the process retried.");
+                                    $writer->remove($targetFile);
+                                    throw new RetryDownloadForUnmatchingHashException();
+                                } else if ($removeInvalid) {
+                                    $io->warning("{$downloadTag} failed hash check twice, not downloading again.");
+                                } else {
+                                    $io->warning("{$downloadTag} failed hash check. The file will be kept as is, specify --remove-invalid if you want to delete such files and retry the download.");
+                                }
                             }
 
                             $progress->finish();
@@ -323,7 +352,10 @@ final class DownloadCommand extends Command
                         ]);
                     } catch (TooManyRetriesException $e) {
                         if (!$input->getOption('skip-errors')) {
-                            throw $e;
+                            if (!count($e->exceptions)) {
+                                throw $e;
+                            }
+                            throw $e->exceptions[array_key_last($e->exceptions)];
                         }
                         $io->note("{$download->name} couldn't be downloaded");
                     }

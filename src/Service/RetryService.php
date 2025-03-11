@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Exception\RetryAwareException;
 use App\Exception\TooManyRetriesException;
 use Exception;
 use Throwable;
@@ -23,13 +24,11 @@ final readonly class RetryService
         $thrown = [];
         do {
             try {
-                $callable();
+                $callable(count($thrown) ? $thrown[array_key_last($thrown)] : null);
 
                 return;
             } catch (Exception $e) {
-                if ($this->debug) {
-                    $thrown[] = $e;
-                }
+                $thrown[] = $e;
                 ++$retries;
                 if (!$this->matches($e, $exceptions)) {
                     throw $e;
@@ -37,7 +36,16 @@ final readonly class RetryService
                 if ($ignoreExceptions && $this->matches($e, $ignoreExceptions)) {
                     throw $e;
                 }
-                sleep($retryDelay);
+
+                if ($e instanceof RetryAwareException) {
+                    $retries = $e->modifyTryNumber($retries);
+                    $tempRetryDelay = $e->modifyDelay($retryDelay);
+                    if ($tempRetryDelay) {
+                        sleep($tempRetryDelay);
+                    }
+                } else {
+                    sleep($retryDelay);
+                }
             }
         } while ($retries < $maxRetries);
 
@@ -45,7 +53,7 @@ final readonly class RetryService
             throw $thrown[array_key_last($thrown)];
         }
 
-        throw new TooManyRetriesException('The operation has been retried too many times, cancelling');
+        throw new TooManyRetriesException($thrown, 'The operation has been retried too many times, cancelling');
     }
 
     /**
