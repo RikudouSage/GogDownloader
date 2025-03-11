@@ -26,6 +26,7 @@ final readonly class GameDetail
     public function __unserialize(array $data): void
     {
         $data['extras'] ??= [];
+        $data['slug'] ??= '';
 
         foreach ($data as $key => $value) {
             $this->$key = $value;
