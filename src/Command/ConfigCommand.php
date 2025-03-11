@@ -52,13 +52,19 @@ final class ConfigCommand extends Command
         if ($settingName === null) {
             $rows = [];
             foreach (Setting::cases() as $setting) {
+                $validValues = $setting->getValidValues();
+                if (is_callable($validValues)) {
+                    $validValues = $validValues();
+                }
+
                 $rows[] = [
                     $setting->value,
                     $this->persistence->getSetting($setting) ?? '<error>-- no value --</error>',
+                    $validValues === null ? '<comment>N/A</comment>' : implode(', ', $validValues),
                 ];
             }
 
-            $io->table(['Setting', 'Value'], $rows);
+            $io->table(['Setting', 'Value', 'Valid values'], $rows);
 
             return self::SUCCESS;
         }
@@ -76,6 +82,12 @@ final class ConfigCommand extends Command
             if ($value === 'null') {
                 $value = null;
             }
+            $validator = $setting->getValidator();
+            if (!$validator($value)) {
+                $io->error("The value '{$value}' is invalid for setting '{$setting->value}'.");
+                return self::FAILURE;
+            }
+
             $this->persistence->storeSetting($setting, $value);
             $io->success("Setting '{$setting->value}' successfully set.");
 

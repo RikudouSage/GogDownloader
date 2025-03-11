@@ -143,7 +143,7 @@ final class DownloadCloudSavesCommand extends Command
                         return;
                     }
 
-                    $targetDirectory = $this->getTargetDir($input, $game, 'SaveFiles');
+                    $targetDirectory = $this->getTargetDir($input, $game, subdirectory: 'SaveFiles');
                     $writer = $this->writerLocator->getWriter($targetDirectory);
                     if (!$writer->exists($targetDirectory)) {
                         $writer->createDirectory($targetDirectory);
