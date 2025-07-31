@@ -127,6 +127,17 @@ final class DownloadCommand extends Command
                 mode: InputOption::VALUE_NONE,
                 description: 'Remove downloaded files that failed hash check and try downloading it again.'
             )
+            ->addOption(
+                name: 'fromName',
+                mode: InputOption::VALUE_REQUIRED,
+                description: 'Resume downloads starting from the game with this name. Mutally exclusive to fromIndex'
+            )
+            ->addOption(
+                name: 'fromIndex',
+                mode: InputOption::VALUE_REQUIRED,
+                description: 'Resume downloads starting from the index number. Uses a internal number. Index can be incorrect if update has been made or the parameters are different. Mutally exclusive to --fromName'
+            )
+
         ;
     }
 
@@ -166,9 +177,53 @@ final class DownloadCommand extends Command
             $iterable = $this->getGames($input, $output, $this->ownedItemsManager);
             $downloadsToSkip = $input->getOption('skip-download');
             $removeInvalid = $input->getOption('remove-invalid');
+            $fromName = $input->getOption('fromName');
+            $fromIndex = $input->getOption('fromIndex');
+            $pastNameLoop = false; #Did we reach the game we want to continue from?
+            $currentGameIndex = 0; #What is the current iteration in the foreach below?
+
+            if ($fromName !== null && $fromIndex !== null) {                
+                    throw new \InvalidArgumentException('--fromName and --fromIndex are mutally exclusive.');
+            }
+
+            if ($fromName !== null) {
+                // Trim whitespace and make sure it's at least 1 character
+                $fromName = trim($fromName);
+                if ($fromName === '' || strlen($fromName) < 1) {
+                    throw new \InvalidArgumentException('--fromName must be a non-empty string.');
+                }
+            }
+
+            if ($fromIndex !== null) {
+                if (!is_numeric($fromIndex) || (int)$fromIndex < 0){
+                    throw new \InvalidArgumentException('--fromIndex must be a positive integer.');
+                }
+                $fromIndex = (int)$fromIndex;
+            }
+
+            
 
             $this->dispatchSignals();
             foreach ($iterable as $game) {
+
+                $io->writeln("Iterating [{$currentGameIndex}] | {$game->title}"); #Just outputting the current game index and title. Should probably refactored to abide by -v. But the spammy output is also a intentional feature for the user.
+                $currentGameIndex++;
+
+                if (isset($fromIndex) && $fromIndex > 0) {
+                    if ($fromIndex === 1) {
+                        $pastNameLoop = true;
+                    }
+                    $fromIndex--;
+                    continue;
+                }                
+
+                if (strcasecmp($fromName, $game->title) === 0 && !$pastNameLoop && strlen($fromName) > 0) { #Iterate to the game name given with the FromName Parameter
+                    $pastNameLoop = true;
+                } elseif (!$pastNameLoop && strlen($fromName) > 0) {
+                    $io->writeln("{$game->title}: Skipping because we haven't found the given name --FromName={$fromName} Yet");
+                    continue;
+                }
+                
                 $downloads = [];
                 if (!$input->getOption('no-games')) {
                     $downloads = [...$downloads, ...$game->downloads];
@@ -177,7 +232,7 @@ final class DownloadCommand extends Command
                     $downloads = [...$downloads, ...$game->extras];
                 }
 
-                foreach ($downloads as $download) {
+                foreach ($downloads as $download) {                    
                     try {
                         $this->retryService->retry(function (?Throwable $retryReason) use (
                             $removeInvalid,
