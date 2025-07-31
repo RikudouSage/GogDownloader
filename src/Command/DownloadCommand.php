@@ -130,7 +130,12 @@ final class DownloadCommand extends Command
             ->addOption(
                 name: 'fromName',
                 mode: InputOption::VALUE_REQUIRED,
-                description: 'Resume downloads starting from the game with this name'
+                description: 'Resume downloads starting from the game with this name. Mutally exclusive to fromIndex'
+            )
+            ->addOption(
+                name: 'fromIndex',
+                mode: InputOption::VALUE_REQUIRED,
+                description: 'Resume downloads starting from the index number. Uses a internal number. Index can be incorrect if update has been made or the parameters are different. Mutally exclusive to --fromName'
             )
 
         ;
@@ -173,7 +178,13 @@ final class DownloadCommand extends Command
             $downloadsToSkip = $input->getOption('skip-download');
             $removeInvalid = $input->getOption('remove-invalid');
             $fromName = $input->getOption('fromName');
+            $fromIndex = $input->getOption('fromIndex');
             $pastNameLoop = false; #Did we reach the game we want to continue from?
+            $currentGameIndex = 0; #What is the current iteration in the foreach below?
+
+            if ($fromName !== null && $fromIndex !== null) {                
+                    throw new \InvalidArgumentException('--fromName and --fromIndex are mutally exclusive.');
+            }
 
             if ($fromName !== null) {
                 // Trim whitespace and make sure it's at least 1 character
@@ -183,13 +194,32 @@ final class DownloadCommand extends Command
                 }
             }
 
+            if ($fromIndex !== null) {
+                if (!is_numeric($fromIndex) || (int)$fromIndex < 0){
+                    throw new \InvalidArgumentException('--fromIndex must be a positive integer.');
+                }
+                $fromIndex = (int)$fromIndex;
+            }
+
             
 
             $this->dispatchSignals();
             foreach ($iterable as $game) {
-                if (strcasecmp($fromName, $game->title) === 0) { #Iterate to the game name given with the FromIndex Parameter
+
+                $io->writeln("Iterating [{$currentGameIndex}] | {$game->title}"); #Just outputting the current game index and title. Should probably refactored to abide by -v. But the spammy output is also a intentional feature for the user.
+                $currentGameIndex++;
+
+                if (isset($fromIndex) && $fromIndex > 0) {
+                    if ($fromIndex === 1) {
+                        $pastNameLoop = true;
+                    }
+                    $fromIndex--;
+                    continue;
+                }                
+
+                if (strcasecmp($fromName, $game->title) === 0 && !$pastNameLoop && strlen($fromName) > 0) { #Iterate to the game name given with the FromName Parameter
                     $pastNameLoop = true;
-                } elseif (!$pastNameLoop) {
+                } elseif (!$pastNameLoop && strlen($fromName) > 0) {
                     $io->writeln("{$game->title}: Skipping because we haven't found the given name --FromName={$fromName} Yet");
                     continue;
                 }
