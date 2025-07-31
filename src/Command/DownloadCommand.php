@@ -188,8 +188,9 @@ final class DownloadCommand extends Command
             $this->dispatchSignals();
             foreach ($iterable as $game) {
                 if (strcasecmp($fromName, $game->title) === 0) { #Iterate to the game name given with the FromIndex Parameter
-                    $$pastNameLoop = true;
+                    $pastNameLoop = true;
                 } elseif (!$pastNameLoop) {
+                    $io->writeln("{$game->title}: Skipping because we haven't found the given name --FromName={$fromName} Yet");
                     continue;
                 }
                 
