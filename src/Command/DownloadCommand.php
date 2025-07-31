@@ -127,6 +127,12 @@ final class DownloadCommand extends Command
                 mode: InputOption::VALUE_NONE,
                 description: 'Remove downloaded files that failed hash check and try downloading it again.'
             )
+            ->addOption(
+                name: 'fromName',
+                mode: InputOption::VALUE_REQUIRED,
+                description: 'Resume downloads starting from the game with this name'
+            )
+
         ;
     }
 
@@ -166,9 +172,27 @@ final class DownloadCommand extends Command
             $iterable = $this->getGames($input, $output, $this->ownedItemsManager);
             $downloadsToSkip = $input->getOption('skip-download');
             $removeInvalid = $input->getOption('remove-invalid');
+            $fromName = $input->getOption('fromName');
+            $pastNameLoop = false; #Did we reach the game we want to continue from?
+
+            if ($fromName !== null) {
+                // Trim whitespace and make sure it's at least 1 character
+                $fromName = trim($fromName);
+                if ($fromName === '' || strlen($fromName) < 1) {
+                    throw new \InvalidArgumentException('--fromName must be a non-empty string.');
+                }
+            }
+
+            
 
             $this->dispatchSignals();
             foreach ($iterable as $game) {
+                if (strcasecmp($fromName, $game->title) === 0) { #Iterate to the game name given with the FromIndex Parameter
+                    $$pastNameLoop = true;
+                } elseif (!$pastNameLoop) {
+                    continue;
+                }
+                
                 $downloads = [];
                 if (!$input->getOption('no-games')) {
                     $downloads = [...$downloads, ...$game->downloads];
@@ -177,7 +201,7 @@ final class DownloadCommand extends Command
                     $downloads = [...$downloads, ...$game->extras];
                 }
 
-                foreach ($downloads as $download) {
+                foreach ($downloads as $download) {                    
                     try {
                         $this->retryService->retry(function (?Throwable $retryReason) use (
                             $removeInvalid,
