@@ -102,6 +102,8 @@ jobs:
           VERSION: ${{ steps.extract_name.outputs.result }}
         run: echo %VERSION% > bin\appversion
         shell: cmd
+      - name: Install Inno Setup
+        run: choco install innosetup
       - name: Create Windows setup
         run: iscc setup.iss
       - name: Create artifact
