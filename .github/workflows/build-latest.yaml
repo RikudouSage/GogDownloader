@@ -59,7 +59,7 @@ jobs:
       - name: Install Dependencies
         run: composer install --no-dev
       - name: Install Inno Setup
-        run: winget install --accept-package-agreements --accept-source-agreements innosetup
+        run: choco install innosetup
       - name: Create Windows setup
         run: iscc setup.iss
       - name: Create artifact
