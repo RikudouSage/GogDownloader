@@ -148,7 +148,7 @@ final class PersistenceManagerSqlite extends AbstractPersistenceManager
                 $download->md5,
                 $id,
                 $download->gogGameId,
-                $download->isPatch,
+                (int) $download->isPatch,
             ]);
         }
         foreach ($detail->extras as $extra) {
