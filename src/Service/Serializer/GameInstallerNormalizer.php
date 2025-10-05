@@ -28,6 +28,7 @@ final class GameInstallerNormalizer implements SerializerNormalizer
                     url: $file['downlink'],
                     md5: null,
                     gogGameId: $value['gogGameId'] ?? null,
+                    isPatch: $value['is_patch'] ?? false,
                 );
             }
 
@@ -43,6 +44,7 @@ final class GameInstallerNormalizer implements SerializerNormalizer
                 url: $value['url'],
                 md5: $value['md5'],
                 gogGameId: $value['gog_game_id'] ?? null,
+                isPatch: $value['is_patch'] ?? false,
             );
         }
 

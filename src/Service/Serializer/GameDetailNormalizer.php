@@ -18,9 +18,16 @@ final readonly class GameDetailNormalizer implements SerializerNormalizer
                 $value['downloads'],
             );
         } else {
+            $patches = array_map(
+                function (array $patch): array {
+                    $patch['is_patch'] = true;
+                    return $patch;
+                },
+                $value['downloads']['patches'] ?? [],
+            );
             $sourceDownloads = [
                 ...$value['downloads']['installers'],
-                ...$value['downloads']['patches'],
+                ...$patches,
                 ...$value['downloads']['language_packs'],
             ];
             $downloads = [];

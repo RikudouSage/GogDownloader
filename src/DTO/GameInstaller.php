@@ -12,6 +12,7 @@ final class GameInstaller implements DownloadableItem, PlatformSpecificItem
         public readonly string $url,
         public private(set) ?string $md5,
         public readonly ?int   $gogGameId,
+        public readonly bool $isPatch = false,
     ) {
     }
 
@@ -19,6 +20,9 @@ final class GameInstaller implements DownloadableItem, PlatformSpecificItem
     {
         if (is_string($data['gogGameId'])) {
             $data['gogGameId'] = (int)$data['gogGameId'];
+        }
+        if (!isset($data['isPatch'])) {
+            $data['isPatch'] = false;
         }
 
         foreach ($data as $key => $value) {
