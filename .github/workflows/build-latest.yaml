@@ -58,6 +58,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Install Dependencies
         run: composer install --no-dev
+      - name: Install Inno Setup
+        run: winget install --accept-package-agreements --accept-source-agreements innosetup
       - name: Create Windows setup
         run: iscc setup.iss
       - name: Create artifact
