@@ -12,6 +12,7 @@ final class GameInstaller implements DownloadableItem, PlatformSpecificItem
         public readonly string $url,
         public private(set) ?string $md5,
         public readonly ?int   $gogGameId,
+        public readonly bool $isPatch = false,
     ) {
     }
 
