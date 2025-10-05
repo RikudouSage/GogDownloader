@@ -434,7 +434,8 @@ Options:
   -b, --bandwidth=BANDWIDTH                                    Specify the maximum download speed in bytes. You can use the k postfix for kilobytes or m postfix for megabytes (for example 200k or 4m to mean 200 kilobytes and 4 megabytes respectively)
   -e, --extras                                                 Whether to include extras or not.
       --skip-existing-extras                                   Unlike games, extras generally don't have a hash that can be used to check whether the downloaded content is the same as the remote one, meaning by default extras will be downloaded every time, even if they exist. By providing this flag, you will skip existing extras.
-      --no-games                                               Skip downloading games. Should be used with other options like --extras if you want to only download those.
+      --no-games                                               Skip downloading games and patches. Should be used with other options like --extras if you want to only download those.
+      --no-patches                                             Skip downloading patches.
       --skip-download=SKIP-DOWNLOAD                            Skip a download by its name, can be specified multiple times. (multiple values allowed)
       --remove-invalid                                         Remove downloaded files that failed hash check and try downloading it again.
   -h, --help                                                   Display help for the given command. When no command is given display help for the list command
