@@ -115,7 +115,12 @@ final class DownloadCommand extends Command
             ->addOption(
                 name: 'no-games',
                 mode: InputOption::VALUE_NONE,
-                description: 'Skip downloading games. Should be used with other options like --extras if you want to only download those.'
+                description: 'Skip downloading games and patches. Should be used with other options like --extras if you want to only download those.'
+            )
+            ->addOption(
+                name: 'no-patches',
+                mode: InputOption::VALUE_NONE,
+                description: 'Skip downloading patches.',
             )
             ->addOption(
                 name: 'skip-download',
@@ -164,17 +169,27 @@ final class DownloadCommand extends Command
             $noVerify = $input->getOption('no-verify');
             $skipExistingExtras = $input->getOption('skip-existing-extras');
             $iterable = $this->getGames($input, $output, $this->ownedItemsManager);
+
             $downloadsToSkip = $input->getOption('skip-download');
             $removeInvalid = $input->getOption('remove-invalid');
+            $withoutGames = $input->getOption('no-games');
+            $withoutPatches = $input->getOption('no-patches');
+            $includeExtras = $input->getOption('extras');
 
             $this->dispatchSignals();
             foreach ($iterable as $game) {
                 $downloads = [];
-                if (!$input->getOption('no-games')) {
+                if (!$withoutGames) {
                     $downloads = [...$downloads, ...$game->downloads];
                 }
-                if ($input->getOption('extras')) {
+                if ($includeExtras) {
                     $downloads = [...$downloads, ...$game->extras];
+                }
+                if ($withoutPatches) {
+                    $downloads = array_values(array_filter(
+                        $downloads,
+                        fn (GameInstaller|GameExtra $download) => $download instanceof GameExtra || !$download->isPatch,
+                    ));
                 }
 
                 foreach ($downloads as $download) {
