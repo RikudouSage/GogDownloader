@@ -21,6 +21,9 @@ final class GameInstaller implements DownloadableItem, PlatformSpecificItem
         if (is_string($data['gogGameId'])) {
             $data['gogGameId'] = (int)$data['gogGameId'];
         }
+        if (!isset($data['isPatch'])) {
+            $data['isPatch'] = false;
+        }
 
         foreach ($data as $key => $value) {
             $this->$key = $value;
