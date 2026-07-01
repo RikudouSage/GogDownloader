@@ -348,14 +348,27 @@ final class DownloadCommand extends Command
                             $writer->finalizeWriting($targetFile, $hash);
 
                             if (!$noVerify && $download->md5 && $download->md5 !== $hash) {
+                                $hashDetails = '';
+                                if ($output->isVerbose()) {
+                                    $hashDetails = sprintf(
+                                        ' Expected MD5: %s; actual MD5: %s; target: %s; filename: %s; download URL: %s; resume offset: %s.',
+                                        $download->md5,
+                                        $hash,
+                                        $this->formatTargetFile($targetFile),
+                                        $filename,
+                                        $this->downloadManager->getDownloadUrl($download),
+                                        $startAt === null ? 'none' : "{$startAt} bytes",
+                                    );
+                                }
+
                                 if ($removeInvalid && !$retryReason instanceof RetryDownloadForUnmatchingHashException) {
-                                    $io->warning("{$downloadTag} failed hash check. The file will be removed and the process retried.");
+                                    $io->warning("{$downloadTag} failed hash check. The file will be removed and the process retried.{$hashDetails}");
                                     $writer->remove($targetFile);
                                     throw new RetryDownloadForUnmatchingHashException();
                                 } else if ($removeInvalid) {
-                                    $io->warning("{$downloadTag} failed hash check twice, not downloading again.");
+                                    $io->warning("{$downloadTag} failed hash check twice, not downloading again.{$hashDetails}");
                                 } else {
-                                    $io->warning("{$downloadTag} failed hash check. The file will be kept as is, specify --remove-invalid if you want to delete such files and retry the download.");
+                                    $io->warning("{$downloadTag} failed hash check. The file will be kept as is, specify --remove-invalid if you want to delete such files and retry the download.{$hashDetails}");
                                 }
                             }
 
@@ -467,5 +480,17 @@ final class DownloadCommand extends Command
         }
 
         throw new InvalidArgumentException("Unsupported bandwidth format: {$bandwidth}");
+    }
+
+    private function formatTargetFile(object $targetFile): string
+    {
+        if (property_exists($targetFile, 'path')) {
+            return $targetFile->path;
+        }
+        if (property_exists($targetFile, 'bucket') && property_exists($targetFile, 'key')) {
+            return "s3://{$targetFile->bucket}/{$targetFile->key}";
+        }
+
+        return $targetFile::class;
     }
 }
