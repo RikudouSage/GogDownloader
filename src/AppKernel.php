@@ -72,6 +72,6 @@ final class AppKernel extends Kernel
 
     private function getAppKey(): string
     {
-        return md5(file_get_contents(__FILE__));
+        return 'gog-downloader-1';
     }
 }
