@@ -78,7 +78,7 @@ final class OwnedItemsManager
         }
         if ($filter->operatingSystems !== null) {
             $query['system'] = implode(',', array_map(
-                fn (OperatingSystem $operatingSystem): string => $operatingSystem->getAsNumbers(),
+                fn (OperatingSystem $operatingSystem): string => $operatingSystem->value,
                 $filter->operatingSystems,
             ));
         }
