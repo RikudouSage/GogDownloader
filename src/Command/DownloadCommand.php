@@ -261,19 +261,14 @@ final class DownloadCommand extends Command
                             $targetFile = $writer->getFileReference("{$targetDir}/{$filename}");
 
                             $startAt = null;
-                            if (
-                                (
-                                    $download->md5
-                                    || $noVerify
-                                    || ($download instanceof GameExtra && $skipExistingExtras)
-                                )
-                                && $writer->exists($targetFile)
-                            ) {
-                                try {
-                                    $md5 = $noVerify ? '' : $writer->getMd5Hash($targetFile);
-                                } catch (UnreadableFileException) {
-                                    $io->warning("{$downloadTag}: Tried to get existing hash of {$download->name}, but the file is not readable. It will be downloaded again");
-                                    $md5 = '';
+                            if ($writer->exists($targetFile)) {
+                                $md5 = '';
+                                if (!$noVerify && $download->md5) {
+                                    try {
+                                        $md5 = $writer->getMd5Hash($targetFile);
+                                    } catch (UnreadableFileException) {
+                                        $io->warning("{$downloadTag}: Tried to get existing hash of {$download->name}, but the file is not readable. It will be downloaded again");
+                                    }
                                 }
                                 if (!$noVerify && $download->md5 === $md5) {
                                     if ($output->isVerbose()) {
@@ -296,7 +291,34 @@ final class DownloadCommand extends Command
 
                                     return;
                                 }
-                                $startAt = $writer->isReadable($targetFile) ? $writer->getSize($targetFile) : null;
+
+                                $expectedSize = (int) $download->size;
+                                if ($download instanceof GameInstaller && !$download->md5 && $expectedSize > 0 && $writer->isReadable($targetFile)) {
+                                    $existingSize = $writer->getSize($targetFile);
+                                    if ($existingSize === $expectedSize) {
+                                        if ($output->isVerbose()) {
+                                            $io->writeln("{$downloadTag}: Skipping because it exists and has the expected size");
+                                        }
+
+                                        return;
+                                    }
+
+                                    if ($existingSize > $expectedSize) {
+                                        if ($removeInvalid && !$retryReason instanceof RetryDownloadForUnmatchingHashException) {
+                                            $io->warning("{$downloadTag}: Existing file is larger than expected. The file will be removed and the process retried.");
+                                            $writer->remove($targetFile);
+                                            throw new RetryDownloadForUnmatchingHashException();
+                                        }
+
+                                        $io->warning("{$downloadTag}: Existing file is larger than expected; not appending to it. Remove the file and retry the download.");
+
+                                        return;
+                                    }
+                                }
+
+                                if ($download->md5 || $download instanceof GameInstaller) {
+                                    $startAt = $writer->isReadable($targetFile) ? $writer->getSize($targetFile) : null;
+                                }
                             }
 
                             $progress->setMaxSteps(0);
